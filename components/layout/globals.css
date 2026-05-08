@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --black: #0d0d0d;
+  --white: #f5f5f3;
+  --orange: #f04e0f;
+  --gray-light: #e8e8e5;
+  --gray-mid: #aaaaaa;
+  --gray-dark: #444444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-barlow), 'Barlow', sans-serif;
+  background-color: var(--white);
+  color: var(--black);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Font weight utilities (Tailwind doesn't have font-700 etc.) ── */
+.font-400 { font-weight: 400; }
+.font-500 { font-weight: 500; }
+.font-600 { font-weight: 600; }
+.font-700 { font-weight: 700; }
+.font-800 { font-weight: 800; }
+.font-900 { font-weight: 900; }
+.font-condensed { font-family: var(--font-barlow-condensed), 'Barlow Condensed', sans-serif; }
+
+/* ── Ticker ── */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-animate { animation: ticker 28s linear infinite; }
+
+/* ── Slow spin ── */
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin-slow 12s linear infinite; }
+
+/* ── Fade up ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.7s ease forwards; }
+
+/* ── Image zoom ── */
+.img-zoom { transition: transform 0.5s ease; }
+.img-zoom:hover { transform: scale(1.05); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--white); }
+::-webkit-scrollbar-thumb { background: var(--gray-mid); border-radius: 2px; }
