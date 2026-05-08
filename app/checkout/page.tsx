@@ -234,7 +234,7 @@ export default function CheckoutPage() {
 
   const s = {
     card: { background: '#fff', borderRadius: 16, padding: 24, marginBottom: 16 } as React.CSSProperties,
-    section: { fontSize: 13, fontWeight: 700, letterSpacing: '1px', marginBottom: 16, fontFamily: '"Barlow Condensed", sans-serif', textTransform: 'uppercase' as const, fontSize: 15 } as React.CSSProperties,
+    section: {fontWeight: 700, letterSpacing: '1px', marginBottom: 16, fontFamily: '"Barlow Condensed", sans-serif', textTransform: 'uppercase' as const, fontSize: 15 } as React.CSSProperties,
   }
 
   return (
