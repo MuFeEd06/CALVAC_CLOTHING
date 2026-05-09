@@ -52,7 +52,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const router = useRouter()
   const cfg = mergeConfig(settings ?? null, 'carousel', DEFAULTS)
-  const txCfg = getScrollTransitionConfig(settings)
+  const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
   // Build 6-slot array: products with carousel_slot fill their slot, rest are placeholders
