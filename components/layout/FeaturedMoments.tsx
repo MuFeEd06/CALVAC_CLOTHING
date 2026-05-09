@@ -59,7 +59,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const cfg = mergeConfig(settings ?? null, 'featured_moments', DEFAULTS)
   const router = useRouter()
-  const txCfg = getScrollTransitionConfig(settings)
+  const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
   // Slot-based product mapping
