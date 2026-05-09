@@ -50,7 +50,7 @@ export default function CollectionsSection({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const cfg = mergeConfig(settings ?? null, 'collections', DEFAULTS)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
-  const txCfg = getScrollTransitionConfig(settings)
+  const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
   const parallax1 = (scrollY * 0.16).toFixed(1)
