@@ -50,7 +50,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
             {/* Info + Actions (client component) */}
             <div className="md:sticky md:top-[100px] md:self-start">
-              <ProductDetailClient product={product} settings={settings} />
+              <ProductDetailClient product={product} />
             </div>
           </div>
         </div>
