@@ -54,6 +54,40 @@ export function mergeConfig(
   return { bgColor, accentColor, elements: elementMap }
 }
 
+export function mergeDeviceConfig(
+  settings: SiteSettings | null,
+  pageId: string,
+  defaults: PageEl[],
+  viewport: 'mobile' | 'tablet' | 'desktop',
+): MergedConfig {
+  let bgColor = '#f5f5f3'
+  let accentColor = '#f04e0f'
+  const elementMap = new Map<string, PageEl>()
+
+  defaults.forEach(d => elementMap.set(d.id, { ...d }))
+
+  if (settings?.page_configs) {
+    try {
+      const pc = JSON.parse(settings.page_configs)
+      const deviceRoot = viewport === 'mobile' ? pc?._mobileConfigs : viewport === 'tablet' ? pc?._tabletConfigs : null
+      const pg = deviceRoot?.[pageId] ?? pc?.[pageId]
+      if (pg) {
+        if (pg.bgColor) bgColor = pg.bgColor
+        if (pg.accentColor) accentColor = pg.accentColor
+        if (pg.elements) {
+          pg.elements.forEach((saved: PageEl) => {
+            const def = elementMap.get(saved.id)
+            if (def) elementMap.set(saved.id, { ...def, ...saved })
+            else elementMap.set(saved.id, saved)
+          })
+        }
+      }
+    } catch {}
+  }
+
+  return { bgColor, accentColor, elements: elementMap }
+}
+
 // Helpers to read from merged config
 export function el(cfg: MergedConfig, id: string): PageEl | undefined {
   return cfg.elements.get(id)

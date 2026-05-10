@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   Save, Eye, EyeOff, Move, RotateCcw, Layers,
-  Image as ImageIcon, Monitor, Smartphone, Settings, Bell, ChevronLeft,
+  Image as ImageIcon, Monitor, Smartphone, Tablet, Settings, Bell, ChevronLeft,
 } from 'lucide-react'
 import {
   HERO_DEFAULTS, FEATURED_DEFAULTS, CATEGORIES_DEFAULTS,
@@ -13,7 +13,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────
 type PageId = 'hero' | 'featured_moments' | 'categories' | 'carousel' | 'collections' | 'footer'
-type Tab    = 'desktop' | 'mobile' | 'store' | 'announcement'
+type Tab    = 'desktop' | 'tablet' | 'mobile' | 'store' | 'announcement'
 
 // Mobile section IDs  (separate namespace so they don't collide with desktop)
 type MobilePageId =
@@ -250,15 +250,16 @@ function PageBackground({ config }: { config: PageConfig }) {
   return null
 }
 
-function DesktopPageCanvas({ config, selectedId, onSelect, onDrag }: {
+function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight }: {
   config: PageConfig; selectedId: string | null
   onSelect: (id: string) => void; onDrag: (id: string, x: number, y: number) => void
+  canvasHeight?: number
 }) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const dragging  = useRef<string | null>(null)
   const dragStart = useRef({ mouseX: 0, mouseY: 0, elX: 0, elY: 0 })
   const [canvasW, setCanvasW] = useState(640)
-  const CANVAS_H = 760
+  const CANVAS_H = canvasHeight ?? 760
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -332,6 +333,303 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag }: {
 // ─────────────────────────────────────────────────────────────
 //  MOBILE PHONE PREVIEW CANVAS
 // ─────────────────────────────────────────────────────────────
+function TabletSectionPreview({ config, categoryItems }: { config: PageConfig; categoryItems: CategoryItem[] }) {
+  const visible = config.elements.filter(e => e.visible)
+  const imageEls = visible.filter(e => e.isImage)
+  const textEls = visible.filter(e => !e.isImage && e.type !== 'product_card' && e.type !== 'avatars')
+  const heroImage = imageEls[0]
+  const title = textEls.find(e => e.id.includes('headline') || e.id.includes('title') || e.id.includes('feat_title')) ?? textEls[0]
+  const body = textEls.find(e => e.id.includes('description') || e.id.includes('intro') || e.id.includes('custom_text') || e.id.includes('feat_desc'))
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: 'min(100%, 768px)', aspectRatio: '4 / 3', background: config.bgColor, borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', border: '10px solid #171717' }}>
+        <div style={{ height: 58, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+          <div style={{ width: 34, display: 'flex', flexDirection: 'column', gap: 6 }}><span style={{ height: 2, background: '#0d0d0d' }} /><span style={{ height: 2, background: '#0d0d0d' }} /></div>
+          <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 20, letterSpacing: '7px' }}>CALVAC</span>
+          <div style={{ display: 'flex', gap: 8 }}><span style={{ width: 32, height: 32, borderRadius: '50%', border: '1.5px solid #0d0d0d' }} /><span style={{ width: 32, height: 32, borderRadius: '50%', border: '1.5px solid #0d0d0d' }} /></div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: config.id === 'hero' ? '0.9fr 1.1fr' : '1fr 1fr', gap: 32, height: 'calc(100% - 58px)', padding: 34, alignItems: 'center' }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 10, letterSpacing: '4px', color: '#aaa', textTransform: 'uppercase', marginBottom: 16 }}>{config.label}</p>
+            {title && <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(44px,7vw,78px)', lineHeight: 0.92, letterSpacing: 0, whiteSpace: 'pre-line', color: title.color ?? '#0d0d0d', margin: '0 0 18px' }}>{title.content ?? title.label}</h2>}
+            {body && <p style={{ fontSize: 15, lineHeight: 1.75, color: body.color ?? '#666', whiteSpace: 'pre-line', maxWidth: 330, margin: '0 0 22px' }}>{body.content ?? body.label}</p>}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '10px 22px', fontSize: 11, fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase' }}>Shop now -&gt;</div>
+          </div>
+          <div style={{ minWidth: 0, height: '100%', display: 'grid', gridTemplateRows: config.id === 'categories' ? '1fr auto' : '1fr', gap: 18 }}>
+            <div style={{ minHeight: 0, overflow: 'hidden', background: heroImage?.imageUrl ? 'transparent' : (heroImage?.color ?? '#e2e0dc'), clipPath: 'polygon(4% 0%,82% 0%,96% 34%,96% 100%,18% 100%,4% 64%)' }}>
+              {heroImage?.imageUrl ? <img src={heroImage.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: heroImage.objectPosition ?? 'top center' }} /> : null}
+            </div>
+            {config.id === 'categories' && (
+              <div>
+                {categoryItems.filter(c => c.visible).slice(0, 4).map((cat, i) => (
+                  <div key={cat.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 42px', gap: 8, alignItems: 'center', borderBottom: '1px solid #e8e8e5', padding: '7px 0' }}>
+                    <span style={{ fontSize: 10, color: i === 0 ? '#0d0d0d' : '#ccc' }}>[{String(i + 1).padStart(2, '0')}]</span>
+                    <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: i === 0 ? 34 : 24, lineHeight: 1, textAlign: 'right', color: i === 0 ? cat.color : '#ccc' }}>{cat.name}</span>
+                    <span style={{ fontSize: 11, color: '#aaa', textAlign: 'right' }}>({cat.count})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function buildDeviceDefaults(device: 'tablet' | 'mobile'): Record<PageId, PageConfig> {
+  const fontScale = device === 'tablet' ? 0.78 : 0.56
+  const imageScale = device === 'tablet' ? 1 : 1.18
+  const xClamp = device === 'tablet' ? 88 : 84
+  const yClamp = 88
+
+  const clonePage = (page: PageConfig): PageConfig => ({
+    ...page,
+    elements: page.elements.map(el => ({
+      ...el,
+      x: Math.min(xClamp, Math.max(0, Math.round(el.x * 10) / 10)),
+      y: Math.min(yClamp, Math.max(0, Math.round(el.y * 10) / 10)),
+      fontSize: el.fontSize ? Math.max(7, Math.round(el.fontSize * fontScale)) : el.fontSize,
+      width: el.width ? Math.min(device === 'tablet' ? 68 : 92, Math.max(8, Math.round(el.width * imageScale))) : el.width,
+      height: el.height ? Math.min(100, Math.max(6, Math.round(el.height))) : el.height,
+    })),
+  })
+
+  return {
+    hero: clonePage(DESKTOP_DEFAULTS.hero),
+    featured_moments: clonePage(DESKTOP_DEFAULTS.featured_moments),
+    categories: clonePage(DESKTOP_DEFAULTS.categories),
+    carousel: clonePage(DESKTOP_DEFAULTS.carousel),
+    collections: clonePage(DESKTOP_DEFAULTS.collections),
+    footer: clonePage(DESKTOP_DEFAULTS.footer),
+  }
+}
+
+function DeviceElementPanel({
+  pageId, selected, uploading, onUpdate, onUpload, onReset,
+}: {
+  pageId: PageId
+  selected?: PageElement
+  uploading: boolean
+  onUpdate: (id: string, patch: Partial<PageElement>) => void
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void
+  onReset: (id: string) => void
+}) {
+  if (!selected) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 60, color: '#ccc' }}>
+        <Layers size={26} style={{ margin: '0 auto 12px', display: 'block' }} />
+        <p style={{ fontSize: 12, lineHeight: 1.6, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>Click an element<br/>on the canvas to edit</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid #f0f0ee' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, margin: 0 }}>{selected.label}</p>
+        <button onClick={() => onUpdate(selected.id, { visible: !selected.visible })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: selected.visible ? '#0d0d0d' : '#ccc' }}>
+          {selected.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+      </div>
+      <PropRow label="Position X (%)">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input type="range" min={0} max={92} value={selected.x} onChange={e => onUpdate(selected.id, { x: +e.target.value })} style={{ flex: 1 }} />
+          <input type="number" value={selected.x} onChange={e => onUpdate(selected.id, { x: +e.target.value })} style={{ width: 44, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 6px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+        </div>
+      </PropRow>
+      <PropRow label="Position Y (%)">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input type="range" min={0} max={92} value={selected.y} onChange={e => onUpdate(selected.id, { y: +e.target.value })} style={{ flex: 1 }} />
+          <input type="number" value={selected.y} onChange={e => onUpdate(selected.id, { y: +e.target.value })} style={{ width: 44, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 6px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+        </div>
+      </PropRow>
+      {selected.isImage ? (
+        <>
+          <PropRow label="Image">
+            {selected.imageUrl ? (
+              <div style={{ position: 'relative', marginBottom: 8 }}>
+                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 8 }} />
+                <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>x</button>
+              </div>
+            ) : (
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e0e0de', borderRadius: 8, padding: '18px 12px', cursor: 'pointer', gap: 6, marginBottom: 8 }}>
+                <ImageIcon size={20} color="#ccc" />
+                <span style={{ fontSize: 11, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{uploading ? 'Uploading...' : 'Click to upload'}</span>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => onUpload(e, selected.id)} disabled={uploading} />
+              </label>
+            )}
+          </PropRow>
+          <PropRow label="Width (% of page)">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={5} max={95} value={selected.width ?? 20} onChange={e => onUpdate(selected.id, { width: +e.target.value })} style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, width: 32, textAlign: 'right', color: '#666' }}>{selected.width ?? 20}%</span>
+            </div>
+          </PropRow>
+          <PropRow label="Height (% of canvas)">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={5} max={100} value={selected.height ?? 30} onChange={e => onUpdate(selected.id, { height: +e.target.value })} style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, width: 32, textAlign: 'right', color: '#666' }}>{selected.height ?? 30}%</span>
+            </div>
+          </PropRow>
+          <PropRow label={`Zoom: ${Math.round((selected.zoom ?? 1) * 100)}%`}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={50} max={200} step={1} value={Math.round((selected.zoom ?? 1) * 100)} onChange={e => onUpdate(selected.id, { zoom: +e.target.value / 100 })} style={{ flex: 1 }} />
+              <button onClick={() => onUpdate(selected.id, { zoom: 1 })} style={{ fontSize: 10, color: '#aaa', background: 'none', border: '1px solid #e8e8e5', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}>Reset</button>
+            </div>
+          </PropRow>
+          <PropRow label="Image Focus">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
+              {[{ label: 'Top', val: 'top center' }, { label: 'Center', val: 'center center' }, { label: 'Bottom', val: 'bottom center' }, { label: 'Left', val: 'center left' }, { label: 'Right', val: 'center right' }, { label: 'Top L', val: 'top left' }].map(opt => (
+                <button key={opt.val} onClick={() => onUpdate(selected.id, { objectPosition: opt.val })} style={{ padding: '5px 4px', fontSize: 10, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === opt.val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#666', fontFamily: 'Barlow,sans-serif' }}>{opt.label}</button>
+              ))}
+            </div>
+            <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+          </PropRow>
+          <PropRow label="Placeholder Color">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 34, height: 34, border: '1px solid #e8e8e5', borderRadius: 8, cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+            </div>
+          </PropRow>
+        </>
+      ) : (
+        <>
+          {selected.fontSize !== undefined && (
+            <PropRow label="Font Size (px)">
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="range" min={7} max={120} value={selected.fontSize} onChange={e => onUpdate(selected.id, { fontSize: +e.target.value })} style={{ flex: 1 }} />
+                <input type="number" value={selected.fontSize} onChange={e => onUpdate(selected.id, { fontSize: +e.target.value })} style={{ width: 44, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 6px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+              </div>
+            </PropRow>
+          )}
+          <PropRow label="Text Color">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="color" value={selected.color ?? '#000000'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 34, height: 34, border: '1px solid #e8e8e5', borderRadius: 8, cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={selected.color ?? '#000000'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '6px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+            </div>
+          </PropRow>
+          {selected.content !== undefined && (
+            <PropRow label="Content">
+              <textarea value={selected.content} onChange={e => onUpdate(selected.id, { content: e.target.value })} rows={3} style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '8px 10px', fontSize: 12, fontFamily: 'Barlow,sans-serif', resize: 'none', outline: 'none', boxSizing: 'border-box' as const }} />
+            </PropRow>
+          )}
+        </>
+      )}
+      <button onClick={() => onReset(selected.id)} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #e8e8e5', background: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'Barlow,sans-serif', color: '#666', marginTop: 6 }}>
+        Reset Position
+      </button>
+    </>
+  )
+}
+
+function DeviceCanvasEditor({
+  device, pages, configs, activePage, selectedEl, uploading, categoryItems,
+  onActivePage, onSelectedEl, onUpdateEl, onResetPage, onUpload, onColorChange, sideBtn,
+}: {
+  device: 'desktop' | 'tablet' | 'mobile'
+  pages: PageId[]
+  configs: Record<PageId, PageConfig>
+  activePage: PageId
+  selectedEl: string | null
+  uploading: boolean
+  categoryItems: CategoryItem[]
+  onActivePage: (page: PageId) => void
+  onSelectedEl: (id: string | null) => void
+  onUpdateEl: (id: string, patch: Partial<PageElement>) => void
+  onResetPage: () => void
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void
+  onColorChange: (key: 'bgColor' | 'accentColor', value: string) => void
+  sideBtn: (active: boolean) => React.CSSProperties
+}) {
+  const cfg = configs[activePage]
+  const selEl = cfg.elements.find(e => e.id === selectedEl)
+  const canvasHeight = device === 'mobile' ? 820 : device === 'tablet' ? 620 : 760
+  const label = device[0].toUpperCase() + device.slice(1)
+  const Icon = device === 'mobile' ? Smartphone : device === 'tablet' ? Tablet : Monitor
+
+  return (
+    <>
+      <div style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
+        <p style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', padding: '4px 8px 10px', fontFamily: 'Barlow,sans-serif' }}>PAGES</p>
+        {pages.map(pid => {
+          const c = configs[pid]
+          return (
+            <button key={pid} onClick={() => { onActivePage(pid); onSelectedEl(null) }} style={sideBtn(activePage === pid)}>
+              <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{c.icon}</span>
+              <div>
+                <p style={{ fontSize: 12, fontWeight: 600, color: activePage === pid ? '#0d0d0d' : '#666', margin: 0 }}>{c.label}</p>
+                <p style={{ fontSize: 10, color: '#aaa', margin: 0 }}>{c.elements.length} elements</p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4' }}>
+        <div style={{ background: device === 'desktop' ? '#fffbe6' : '#eef8f3', border: `1px solid ${device === 'desktop' ? '#f0d060' : '#bce2ce'}`, borderRadius: 8, padding: '8px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon size={14} color={device === 'desktop' ? '#a16c00' : '#16834a'} />
+          <span style={{ fontSize: 11, color: device === 'desktop' ? '#7a6000' : '#166534', fontFamily: 'Barlow,sans-serif', lineHeight: 1.5 }}>
+            <strong>{label} editor</strong> - drag elements to reposition, click an element on the canvas to edit, and use the right panel for size, color, content and images.
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Move size={12} color="#888" />
+            <span style={{ fontSize: 11, color: '#888', fontFamily: 'Barlow,sans-serif' }}>Drag to reposition - Click to select - Edit in panel</span>
+          </div>
+          <button onClick={onResetPage} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 11, fontFamily: 'Barlow,sans-serif', color: '#666' }}>
+            <RotateCcw size={11} /> Reset Page
+          </button>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+          {cfg.elements.map(e => (
+            <button key={e.id} onClick={() => onUpdateEl(e.id, { visible: !e.visible })} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', background: e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible ? '#fff' : '#888', fontSize: 10, fontFamily: 'Barlow,sans-serif', transition: 'all 0.15s' }}>
+              {e.visible ? <Eye size={9} /> : <EyeOff size={9} />}{e.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ maxWidth: device === 'mobile' ? 390 : device === 'tablet' ? 768 : 'none', margin: device === 'desktop' ? 0 : '0 auto' }}>
+          <DesktopPageCanvas
+            config={activePage === 'categories' ? { ...cfg, _items: categoryItems } as any : cfg}
+            selectedId={selectedEl}
+            onSelect={onSelectedEl}
+            onDrag={(id, x, y) => onUpdateEl(id, { x, y })}
+            canvasHeight={canvasHeight}
+          />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14, background: '#fff', borderRadius: 12, padding: 14 }}>
+          {([['Page Background', 'bgColor'], ['Accent Color', 'accentColor']] as const).map(([labelText, key]) => (
+            <div key={key}>
+              <label style={{ ...lbl10, marginBottom: 8 }}>{labelText}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="color" value={key === 'bgColor' ? cfg.bgColor : cfg.accentColor} onChange={e => onColorChange(key, e.target.value)} style={{ width: 34, height: 34, border: '1px solid #e8e8e5', borderRadius: 8, cursor: 'pointer', padding: 2 }} />
+                <code style={{ fontSize: 11, color: '#666' }}>{key === 'bgColor' ? cfg.bgColor : cfg.accentColor}</code>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ width: 250, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', padding: 14, flexShrink: 0 }}>
+        <DeviceElementPanel
+          pageId={activePage}
+          selected={selEl}
+          uploading={uploading}
+          onUpdate={onUpdateEl}
+          onUpload={onUpload}
+          onReset={id => {
+            const defaults = buildDeviceDefaults(device === 'desktop' ? 'tablet' : device)
+            const d = (device === 'desktop' ? DESKTOP_DEFAULTS : defaults)[activePage].elements.find(x => x.id === id)
+            if (d) onUpdateEl(id, { x: d.x, y: d.y })
+          }}
+        />
+      </div>
+    </>
+  )
+}
+
 function MobilePhoneFrame({ children, bgColor }: { children: React.ReactNode; bgColor: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -508,6 +806,17 @@ export default function AdminSettingsPage() {
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null)
   const [categoryItems, setCategoryItems] = useState<CategoryItem[]>(DEFAULT_CAT_ITEMS)
 
+  // ── Tablet/mobile canvas editor state ──
+  const [activeTabletPage, setActiveTabletPage] = useState<PageId>('hero')
+  const [tabletConfigs, setTabletConfigs] = useState<Record<PageId, PageConfig>>(buildDeviceDefaults('tablet'))
+  const [selectedTabletEl, setSelectedTabletEl] = useState<string | null>(null)
+  const [uploadingTabletImg, setUploadingTabletImg] = useState(false)
+
+  const [activeMobileCanvasPage, setActiveMobileCanvasPage] = useState<PageId>('hero')
+  const [mobileConfigs, setMobileConfigs] = useState<Record<PageId, PageConfig>>(buildDeviceDefaults('mobile'))
+  const [selectedMobileCanvasEl, setSelectedMobileCanvasEl] = useState<string | null>(null)
+  const [uploadingMobileCanvasImg, setUploadingMobileCanvasImg] = useState(false)
+
   // ── Mobile editor state ──
   const [activeMobilePage, setActiveMobilePage] = useState<MobilePageId>('mobile_hero')
   const [mobileSections,   setMobileSections]   = useState<Record<MobilePageId, MobileSectionConfig>>({ ...MOBILE_SECTION_DEFAULTS })
@@ -532,6 +841,8 @@ export default function AdminSettingsPage() {
         try {
           const pc = JSON.parse(data.page_configs)
           setConfigs(prev => ({ ...prev, ...pc }))
+          if (pc?._tabletConfigs) setTabletConfigs(prev => ({ ...prev, ...pc._tabletConfigs }))
+          if (pc?._mobileConfigs) setMobileConfigs(prev => ({ ...prev, ...pc._mobileConfigs }))
           if (pc?._categoryItems)   setCategoryItems(pc._categoryItems)
           if (pc?._mobileSections)  setMobileSections(prev => ({ ...prev, ...pc._mobileSections }))
         } catch {}
@@ -546,6 +857,12 @@ export default function AdminSettingsPage() {
   const updateEl = (id: string, patch: Partial<PageElement>) =>
     setConfigs(c => ({ ...c, [activePage]: { ...c[activePage], elements: c[activePage].elements.map(e => e.id === id ? { ...e, ...patch } : e) } }))
 
+  const updateTabletEl = (id: string, patch: Partial<PageElement>) =>
+    setTabletConfigs(c => ({ ...c, [activeTabletPage]: { ...c[activeTabletPage], elements: c[activeTabletPage].elements.map(e => e.id === id ? { ...e, ...patch } : e) } }))
+
+  const updateMobileCanvasEl = (id: string, patch: Partial<PageElement>) =>
+    setMobileConfigs(c => ({ ...c, [activeMobileCanvasPage]: { ...c[activeMobileCanvasPage], elements: c[activeMobileCanvasPage].elements.map(e => e.id === id ? { ...e, ...patch } : e) } }))
+
   const handleDesktopImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, elId: string) => {
     const file = e.target.files?.[0]; if (!file) return
     setUploadingImg(true)
@@ -557,6 +874,26 @@ export default function AdminSettingsPage() {
       updateEl(elId, { imageUrl: data.publicUrl })
     } catch { alert('Upload failed. Check Supabase storage.') }
     finally { setUploadingImg(false) }
+  }
+
+  const handleDeviceImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    elId: string,
+    device: 'tablet' | 'mobile',
+  ) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const setUploading = device === 'tablet' ? setUploadingTabletImg : setUploadingMobileCanvasImg
+    const pageId = device === 'tablet' ? activeTabletPage : activeMobileCanvasPage
+    const update = device === 'tablet' ? updateTabletEl : updateMobileCanvasEl
+    setUploading(true)
+    try {
+      const path = `page-editor/${device}/${pageId}/${elId}-${Date.now()}.${file.name.split('.').pop()}`
+      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+      update(elId, { imageUrl: data.publicUrl })
+    } catch { alert('Upload failed. Check Supabase storage.') }
+    finally { setUploading(false) }
   }
 
   const handleCatImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, catId: string) => {
@@ -611,7 +948,7 @@ export default function AdminSettingsPage() {
         brand_name: brandName, whatsapp_number: whatsapp,
         announcement_text: announcement, instagram_url: instagram,
         hero_config: JSON.stringify(configs.hero),
-        page_configs: JSON.stringify({ ...configs, _categoryItems: categoryItems, _mobileSections: mobileSections }),
+        page_configs: JSON.stringify({ ...configs, _tabletConfigs: tabletConfigs, _mobileConfigs: mobileConfigs, _categoryItems: categoryItems, _mobileSections: mobileSections }),
         updated_at: new Date().toISOString(),
       }).eq('id', row.id)
 
@@ -668,6 +1005,7 @@ export default function AdminSettingsPage() {
         <div style={{ display: 'flex', gap: 3, background: '#f0efed', padding: 3, borderRadius: 12, flexShrink: 0 }}>
           {([
             ['desktop',      'Desktop',      Monitor],
+            ['tablet',       'Tablet',       Tablet],
             ['mobile',       'Mobile',       Smartphone],
             ['store',        'Store Info',   Settings],
             ['announcement', 'Announcement', Bell],
@@ -931,7 +1269,45 @@ export default function AdminSettingsPage() {
         {/* ════════════════════════════════════════
             MOBILE EDITOR TAB
         ════════════════════════════════════════ */}
+        {tab === 'tablet' && (
+          <DeviceCanvasEditor
+            device="tablet"
+            pages={desktopPages}
+            configs={tabletConfigs}
+            activePage={activeTabletPage}
+            selectedEl={selectedTabletEl}
+            uploading={uploadingTabletImg}
+            categoryItems={categoryItems}
+            onActivePage={setActiveTabletPage}
+            onSelectedEl={setSelectedTabletEl}
+            onUpdateEl={updateTabletEl}
+            onResetPage={() => { setTabletConfigs(c => ({ ...c, [activeTabletPage]: { ...buildDeviceDefaults('tablet')[activeTabletPage] } })); setSelectedTabletEl(null) }}
+            onUpload={(e, id) => handleDeviceImageUpload(e, id, 'tablet')}
+            onColorChange={(key, value) => setTabletConfigs(c => ({ ...c, [activeTabletPage]: { ...c[activeTabletPage], [key]: value } }))}
+            sideBtn={sideBtn}
+          />
+        )}
+
         {tab === 'mobile' && (
+          <DeviceCanvasEditor
+            device="mobile"
+            pages={desktopPages}
+            configs={mobileConfigs}
+            activePage={activeMobileCanvasPage}
+            selectedEl={selectedMobileCanvasEl}
+            uploading={uploadingMobileCanvasImg}
+            categoryItems={categoryItems}
+            onActivePage={setActiveMobileCanvasPage}
+            onSelectedEl={setSelectedMobileCanvasEl}
+            onUpdateEl={updateMobileCanvasEl}
+            onResetPage={() => { setMobileConfigs(c => ({ ...c, [activeMobileCanvasPage]: { ...buildDeviceDefaults('mobile')[activeMobileCanvasPage] } })); setSelectedMobileCanvasEl(null) }}
+            onUpload={(e, id) => handleDeviceImageUpload(e, id, 'mobile')}
+            onColorChange={(key, value) => setMobileConfigs(c => ({ ...c, [activeMobileCanvasPage]: { ...c[activeMobileCanvasPage], [key]: value } }))}
+            sideBtn={sideBtn}
+          />
+        )}
+
+        {false && tab === 'mobile' && (
           <>
             {/* Left sidebar — mobile section list */}
             <div style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
@@ -1046,8 +1422,8 @@ export default function AdminSettingsPage() {
 
                     {selMobileEl && (
                       <MobileElEditor
-                        el={selMobileEl}
-                        onUpdate={patch => updateMobileEl(selMobileEl.id, patch)}
+                        el={selMobileEl!}
+                        onUpdate={patch => updateMobileEl(selMobileEl!.id, patch)}
                         onUpload={handleMobileImageUpload}
                         uploading={uploadingMobileImg}
                       />

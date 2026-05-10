@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Product, SiteSettings } from '@/types'
-import { mergeConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
+import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -48,8 +49,9 @@ function fadeIn(progress: number, start: number, end: number): React.CSSProperti
 
 export default function CollectionsSection({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
-  const cfg = mergeConfig(settings ?? null, 'collections', DEFAULTS)
+  const viewport = useViewportKind()
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const cfg = mergeDeviceConfig(settings ?? null, 'collections', DEFAULTS, viewport)
   const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
@@ -62,6 +64,49 @@ export default function CollectionsSection({ products, settings }: Props) {
     { id: 'col2', def: 'Timeless Classics 2026' },
     { id: 'col3', def: 'Seasonal Collections 2025' },
   ]
+
+  if (viewport !== 'desktop') {
+    const isTablet = viewport === 'tablet'
+    return (
+      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: isTablet ? '72px clamp(32px,6vw,72px) 84px' : '56px clamp(16px,5vw,28px) 68px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(240px,0.72fr) minmax(0,1.28fr)' : '1fr', gap: isTablet ? 'clamp(32px,5vw,68px)' : 30, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '0.42fr 0.58fr', gap: 22, alignItems: 'center' }}>
+            {vis(cfg,'intro') && <p style={{ fontSize: isTablet ? 16 : 15, lineHeight: 1.85, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, textAlign: isTablet ? 'center' : 'left' }}>{txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}</p>}
+            {vis(cfg,'model_image') && (
+              <div>
+                <div style={{ position: 'relative', aspectRatio: isTablet ? '4 / 5.4' : '1 / 2.1', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
+                  {img1 ? <Image src={img1} alt="Collection" fill sizes={isTablet ? '30vw' : '38vw'} style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                </div>
+                {vis(cfg,'caption') && <p style={{ margin: '14px 0 0', fontSize: 13, color: clr(cfg,'caption','#aaa'), fontStyle: 'italic', lineHeight: 1.6 }}>{txt(cfg,'caption','Being Part Of Our Journey.')}</p>}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(0,1fr) 132px' : 'minmax(0,1fr) 96px', gap: isTablet ? 24 : 16, alignItems: 'start', paddingBottom: 28, borderBottom: '1px solid #e8e8e5' }}>
+              <div>
+                <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(46px,6vw,72px)' : 'clamp(40px,12vw,58px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 16px', letterSpacing: 0 }}>{txt(cfg,'feat_title','Statement Pieces 2025')}</h3>
+                <p style={{ fontSize: isTablet ? 16 : 15, lineHeight: 1.75, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 22px', maxWidth: 330 }}>{txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}</p>
+                {vis(cfg,'feat_btn') && <Link href="/shop" style={{ display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'feat_btn','GET STARTED')} →</Link>}
+              </div>
+              <div style={{ position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+                {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes={isTablet ? '132px' : '96px'} style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
+              </div>
+            </div>
+
+            <div>
+              {collectionRows.map((row, i) => vis(cfg, row.id) ? (
+                <Link key={row.id} href="/shop" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 44px', gap: 16, alignItems: 'center', minHeight: isTablet ? 92 : 84, padding: '18px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none' }}>
+                  <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(34px,4.8vw,54px)' : 'clamp(30px,9vw,46px)', lineHeight: 1, color: clr(cfg,row.id,'#555'), overflowWrap: 'anywhere' }}>{txt(cfg,row.id,row.def)}</span>
+                  <span style={{ width: 44, height: 44, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 15 }}>→</span>
+                </Link>
+              ) : null)}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '80px 52px 88px' }}>

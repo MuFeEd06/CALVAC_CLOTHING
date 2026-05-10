@@ -9,6 +9,11 @@
   --gray-light: #e8e8e5;
   --gray-mid: #aaaaaa;
   --gray-dark: #444444;
+  --bp-mobile: 767px;
+  --bp-tablet: 1119px;
+  --site-gutter: clamp(16px, 5vw, 52px);
+  --section-y: clamp(56px, 8vw, 88px);
+  --display-tight: 0.92;
 }
 
 /* ── Reset ── */
@@ -89,7 +94,9 @@ a, button, [role="button"] {
 
 /* ── Mobile: prevent 100vw bleed caused by overflow ── */
 @media (max-width: 639px) {
-  html, body { max-width: 100vw; }
+  html, body { max-width: 100vw; overflow-x: clip; }
+  img, video, canvas, svg { max-width: 100%; }
+  main { overflow: clip; }
 }
 
 /* ── Floating bottom cart bar — only on product & shop pages on mobile ── */

@@ -5,8 +5,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
-import { mergeConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
+import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -57,7 +58,8 @@ function fadeIn(progress: number, start: number, end: number): React.CSSProperti
 
 export default function FeaturedMoments({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
-  const cfg = mergeConfig(settings ?? null, 'featured_moments', DEFAULTS)
+  const viewport = useViewportKind()
+  const cfg = mergeDeviceConfig(settings ?? null, 'featured_moments', DEFAULTS, viewport)
   const router = useRouter()
   const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
@@ -85,6 +87,64 @@ export default function FeaturedMoments({ products, settings }: Props) {
   const parallax3 = (scrollY * 0.22).toFixed(1)
   // FIX: thumb uses negative top offset so parallax doesn't leave gap at top
   const parallax2 = (scrollY * 0.12).toFixed(1)
+
+  if (viewport !== 'desktop') {
+    const isTablet = viewport === 'tablet'
+    const sectionPad = isTablet ? 'clamp(64px,9vw,96px) clamp(32px,6vw,72px)' : '56px clamp(16px,5vw,28px) 64px'
+    const imageShape = 'polygon(4% 0%,82% 0%,96% 34%,96% 100%,18% 100%,4% 64%)'
+
+    return (
+      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden', borderTop: '1px solid #e8e8e5', padding: sectionPad }}>
+        <div style={{ position: 'absolute', left: isTablet ? '36%' : '18%', top: isTablet ? '-10%' : '-4%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(380px,48vw,560px)' : 'min(86vw,360px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
+        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: isTablet ? 'minmax(0,0.95fr) minmax(280px,1.05fr)' : '1fr', gap: isTablet ? 'clamp(28px,5vw,58px)' : 26, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isTablet ? 24 : 18 }}>
+            {vis(cfg, 'headline') && (
+              <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(70px,9vw,112px)' : 'clamp(54px,16vw,82px)', lineHeight: 0.92, letterSpacing: 0, color: clr(cfg,'headline','#0d0d0d'), margin: 0, whiteSpace: 'pre-line', maxWidth: 440 }}>
+                {txt(cfg, 'headline', 'All - about\nmoments C26')}
+              </h2>
+            )}
+            {vis(cfg, 'star') && <div className="animate-spin-slow" style={{ color: clr(cfg,'star',cfg.accentColor), fontSize: isTablet ? 38 : 34, lineHeight: 1 }}>{txt(cfg,'star','*')}</div>}
+            {vis(cfg, 'custom_text') && (
+              <p style={{ fontSize: isTablet ? 16 : 15, lineHeight: 1.8, color: clr(cfg,'custom_text','#555'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'pre-line', maxWidth: 330, margin: 0 }}>
+                {txt(cfg, 'custom_text', 'Crafted for the bold.\nWorn by the few.')}
+              </p>
+            )}
+            {vis(cfg, 'learn_more') && (
+              <Link href="/shop" style={{ display: 'inline-flex', width: 'fit-content', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>
+                {txt(cfg, 'learn_more', 'LEARN MORE')} →
+              </Link>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(0,1fr) minmax(150px,0.58fr)' : '1fr', gap: isTablet ? 24 : 18, alignItems: 'start' }}>
+            {vis(cfg, 'main_image') && (
+              <div>
+                <div onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)} style={{ position: 'relative', aspectRatio: isTablet ? '4 / 5' : '1 / 1.16', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default' }}>
+                  {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes={isTablet ? '34vw' : '92vw'} style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                </div>
+                {vis(cfg, 'caption1') && <p style={{ margin: '12px 0 0', fontSize: 12, color: clr(cfg,'caption1','#aaa'), letterSpacing: '0.4px', fontStyle: 'italic' }}>{txt(cfg,'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}</p>}
+                {vis(cfg, 'price1') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: isTablet ? 42 : 36, margin: '8px 0 0', color: clr(cfg,'price1','#0d0d0d') }}>{p1Price}</p>}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: isTablet ? 'column' : 'row', gap: 18, alignItems: isTablet ? 'stretch' : 'center' }}>
+              {vis(cfg, 'description') && <p style={{ flex: 1, fontSize: 14, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>{txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}</p>}
+              {vis(cfg, 'thumb_image') && (
+                <div style={{ position: 'relative', width: isTablet ? '100%' : 94, aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), flexShrink: 0, clipPath: imageShape }}>
+                  {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes={isTablet ? '18vw' : '94px'} style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                </div>
+              )}
+              {vis(cfg, 'product2_img') && (
+                <div style={{ position: 'relative', width: isTablet ? '100%' : 128, aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'product2_img','#5a5050'), flexShrink: 0, clipPath: imageShape }}>
+                  {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes={isTablet ? '18vw' : '128px'} style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden' }}>

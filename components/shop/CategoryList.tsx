@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { Category, SiteSettings } from '@/types'
-import { mergeConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
+import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { CATEGORIES_DEFAULTS } from '@/lib/pageDefaults'
+import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { categories: Category[]; settings?: SiteSettings | null }
 
@@ -54,7 +55,8 @@ function fadeIn(progress: number, start: number, end: number): React.CSSProperti
 
 export default function CategoryList({ categories, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
-  const cfg = mergeConfig(settings ?? null, 'categories', CATEGORIES_DEFAULTS as any)
+  const viewport = useViewportKind()
+  const cfg = mergeDeviceConfig(settings ?? null, 'categories', CATEGORIES_DEFAULTS as any, viewport)
   const [activeIdx, setActiveIdx] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
   const parallaxY = (scrollY * 0.2).toFixed(1)
@@ -132,6 +134,56 @@ export default function CategoryList({ categories, settings }: Props) {
   // Active category slug for the SEE PRODUCT button link
   const activeCat = finalItems[activeIdx]
   const activeSlug = (activeCat?.name ?? '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+  if (viewport !== 'desktop') {
+    const isTablet = viewport === 'tablet'
+    const visibleItems = finalItems.slice(0, isTablet ? 8 : 6)
+
+    return (
+      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: isTablet ? '72px clamp(32px,6vw,72px) 84px' : '56px clamp(16px,5vw,28px) 68px' }}>
+        <div style={{ position: 'absolute', right: isTablet ? '2%' : '-12%', top: isTablet ? '-8%' : '0', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(360px,46vw,560px)' : 'min(96vw,390px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>C</div>
+        <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: isTablet ? 'minmax(270px,0.9fr) minmax(0,1.1fr)' : '1fr', gap: isTablet ? 'clamp(30px,5vw,64px)' : 28, alignItems: 'center' }}>
+          <div style={{ order: isTablet ? 0 : 1 }}>
+            <div style={{ position: 'relative', aspectRatio: isTablet ? '4 / 5.2' : '1 / 1.45', maxHeight: isTablet ? 620 : 520, overflow: 'hidden', background: clr(cfg, 'model_image', '#e2e0dc'), clipPath: 'polygon(3% 0%,82% 0%,100% 28%,100% 100%,20% 100%,3% 62%)' }}>
+              {activeImg ? (
+                <Image key={activeImg} src={activeImg} alt={activeCat?.name ?? 'Category'} fill sizes={isTablet ? '38vw' : '92vw'} style={{ objectFit: 'cover', objectPosition: 'top center' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#ddddd9,#c8c4be)' }} />
+              )}
+            </div>
+          </div>
+
+          <div style={{ order: isTablet ? 1 : 0 }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {visibleItems.map((cat, i) => {
+                const active = i === activeIdx
+                return (
+                  <li key={cat.id} style={{ borderBottom: '1px solid #e8e8e5' }}>
+                    <button onClick={() => setActiveIdx(i)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'grid', gridTemplateColumns: '42px minmax(0,1fr) 52px', gap: 10, alignItems: 'center', padding: active ? '12px 0' : '10px 0', cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: active ? '#0d0d0d' : '#c9c9c5', fontFamily: 'Barlow,sans-serif' }}>[{String(i + 1).padStart(2, '0')}]</span>
+                      <span style={{ minWidth: 0, fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: active ? (isTablet ? 'clamp(58px,7vw,92px)' : 'clamp(48px,15vw,76px)') : (isTablet ? 'clamp(34px,4vw,54px)' : 'clamp(28px,9vw,44px)'), lineHeight: 0.96, color: active ? (cat.color ?? '#0d0d0d') : '#c8c8c5', textTransform: 'lowercase', transition: 'font-size 0.25s ease,color 0.25s ease', overflowWrap: 'anywhere' }}>{cat.name}</span>
+                      <span style={{ fontSize: active ? 15 : 13, color: active ? '#888' : '#c8c8c5', textAlign: 'right', fontFamily: 'Barlow,sans-serif' }}>({cat.count})</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 24 }}>
+              <span style={{ fontSize: 11, letterSpacing: '4px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>{txt(cfg, 'label', '[CATEGORIES]')}</span>
+              <span style={{ height: 1, flex: 1, borderTop: '1px dashed #ccc' }} />
+            </div>
+            {vis(cfg, 'description') && <p style={{ margin: '24px 0 0', maxWidth: isTablet ? 420 : 330, fontSize: isTablet ? 16 : 15, lineHeight: 1.8, color: clr(cfg, 'description', '#666'), fontFamily: 'Barlow,sans-serif' }}>{description}</p>}
+            {vis(cfg, 'see_product') && (
+              <Link href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'} style={{ marginTop: 28, display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`, borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: clr(cfg, 'see_product', '#0d0d0d'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
+                {txt(cfg, 'see_product', 'SEE PRODUCT')} →
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px 52px 80px', minHeight: 760 }}>

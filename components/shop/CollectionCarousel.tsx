@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
-import { mergeConfig, vis, txt, imgUrl, clr } from '@/lib/useMergedConfig'
+import { mergeDeviceConfig, vis, txt, imgUrl, clr } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -50,8 +51,8 @@ const CARD_W = 225, CARD_W_ACTIVE = 295, CARD_H = 385, CARD_H_ACTIVE = 490, GAP 
 
 export default function CollectionCarousel({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
+  const viewport = useViewportKind()
   const router = useRouter()
-  const cfg = mergeConfig(settings ?? null, 'carousel', DEFAULTS)
   const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
@@ -79,6 +80,15 @@ export default function CollectionCarousel({ products, settings }: Props) {
   const dragStart = useRef({ x: 0, trackX: 0 })
   const dragDistance = useRef(0)  // track how far we dragged to distinguish click vs drag
   const dotIdx = activeIdx % total
+  const isDesktop = viewport === 'desktop'
+  const isTablet = viewport === 'tablet'
+  const cfg = mergeDeviceConfig(settings ?? null, 'carousel', DEFAULTS, viewport)
+  const cardW = isDesktop ? CARD_W : isTablet ? 210 : 168
+  const cardWActive = isDesktop ? CARD_W_ACTIVE : isTablet ? 270 : 218
+  const cardH = isDesktop ? CARD_H : isTablet ? 360 : 292
+  const cardHActive = isDesktop ? CARD_H_ACTIVE : isTablet ? 450 : 360
+  const gap = isDesktop ? GAP : isTablet ? 16 : 12
+  const lift = isDesktop ? LIFT : isTablet ? 30 : 22
 
   // Card colors from admin or fallbacks
   const cardColors = [
@@ -90,19 +100,23 @@ export default function CollectionCarousel({ products, settings }: Props) {
 
   const getCardX = (idx: number, active: number) => {
     let x = 0
-    for (let k = 0; k < idx; k++) x += (k === active ? CARD_W_ACTIVE : CARD_W) + GAP
+    for (let k = 0; k < idx; k++) x += (k === active ? cardWActive : cardW) + gap
     return x
   }
 
   const centerActive = (newActive: number) => {
     const vW = typeof window !== 'undefined' ? window.innerWidth : 1200
     const cardX = getCardX(newActive, newActive)
-    setTrackX(-(cardX + CARD_W_ACTIVE / 2 - vW / 2))
+    setTrackX(-(cardX + cardWActive / 2 - vW / 2))
   }
 
   useEffect(() => {
     if (!initialized.current) { centerActive(activeIdx); initialized.current = true }
   }, [])
+
+  useEffect(() => {
+    if (initialized.current) centerActive(activeIdx)
+  }, [viewport])
 
   const goTo = (newActive: number) => {
     let target = newActive
@@ -126,18 +140,18 @@ export default function CollectionCarousel({ products, settings }: Props) {
   }
 
   return (
-    <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '64px 0 72px' }}>
+    <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: isDesktop ? '64px 0 72px' : isTablet ? '62px 0 76px' : '52px 0 64px' }}>
 
       {/* Header */}
-      <div style={{ ...fadeIn(progress, 0.0, 0.38), ...exitStyle, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '0 52px', marginBottom: 40 }}>
+      <div style={{ ...fadeIn(progress, 0.0, 0.38), ...exitStyle, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: isDesktop ? '0 52px' : isTablet ? '0 clamp(32px,6vw,72px)' : '0 clamp(16px,5vw,28px)', marginBottom: isDesktop ? 40 : 30, gap: 18 }}>
         <div>
-          <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 25, fontWeight: 800,letterSpacing: '3px',color: '#0d0d0d', marginBottom: 6 }}>{txt(cfg,'title','SHOP THE COLLECTIONS')}</p>
+          <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: isDesktop ? 25 : isTablet ? 22 : 18, fontWeight: 800,letterSpacing: '3px',color: '#0d0d0d', marginBottom: 6 }}>{txt(cfg,'title','SHOP THE COLLECTIONS')}</p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 15, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'year','2026')}</span>
             <span style={{ fontSize: 15, color: '#aaa', letterSpacing: '2px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'other','[Other]')}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           {[{ fn: prev, label: '←' }, { fn: next, label: '→' }].map((b, i) => (
             <button key={i} onClick={b.fn} style={{ width: 42, height: 42, border: '1.5px solid #0d0d0d', borderRadius: '50%', background: 'none', cursor: 'pointer', fontSize: 16, color: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#0d0d0d'; e.currentTarget.style.color = '#fff' }}
@@ -148,14 +162,14 @@ export default function CollectionCarousel({ products, settings }: Props) {
       </div>
 
       {/* Track */}
-      <div style={{ ...fadeIn(progress, 0.08, 0.52), overflow: 'hidden', cursor: 'grab', paddingBottom: LIFT + 10 }}
+      <div style={{ ...fadeIn(progress, 0.08, 0.52), overflow: 'hidden', cursor: 'grab', paddingBottom: lift + 10, touchAction: 'pan-y' }}
         onMouseDown={e => onDragStart(e.clientX)} onMouseMove={e => onDragMove(e.clientX)} onMouseUp={e => onDragEnd(e.clientX)} onMouseLeave={e => { if (dragging.current) onDragEnd(e.clientX) }}
         onTouchStart={e => onDragStart(e.touches[0].clientX)} onTouchMove={e => onDragMove(e.touches[0].clientX)} onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: GAP, transform: `translateX(${trackX}px)`, transition: dragging.current ? 'none' : 'transform 0.5s cubic-bezier(0.4,0,0.2,1)', willChange: 'transform', width: 'max-content' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap, transform: `translateX(${trackX}px)`, transition: dragging.current ? 'none' : 'transform 0.5s cubic-bezier(0.4,0,0.2,1)', willChange: 'transform', width: 'max-content' }}>
           {items.map((item, i) => {
             const isActive = i === activeIdx
-            const w = isActive ? CARD_W_ACTIVE : CARD_W
-            const h = isActive ? CARD_H_ACTIVE : CARD_H
+            const w = isActive ? cardWActive : cardW
+            const h = isActive ? cardHActive : cardH
             const bg = cardColors[i % cardColors.length]
             const imgSrc = cardImgs[i % cardImgs.length] || item?.images?.[0]
             const dist = Math.abs(i - activeIdx)
@@ -168,7 +182,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                 } else {
                   goTo(i)
                 }
-              }} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: isActive ? 'pointer' : 'pointer', transform: `translateY(${isActive ? -LIFT : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
+              }} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -lift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
                 {imgSrc ? <Image src={imgSrc} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
                   : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 10 }}>{item?.name}</span></div>}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
