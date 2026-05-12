@@ -67,42 +67,129 @@ export default function CollectionsSection({ products, settings }: Props) {
 
   if (viewport !== 'desktop') {
     const isTablet = viewport === 'tablet'
-    return (
-      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: isTablet ? '72px clamp(32px,6vw,72px) 84px' : '56px clamp(16px,5vw,28px) 68px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(240px,0.72fr) minmax(0,1.28fr)' : '1fr', gap: isTablet ? 'clamp(32px,5vw,68px)' : 30, alignItems: 'start' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '0.42fr 0.58fr', gap: 22, alignItems: 'center' }}>
-            {vis(cfg,'intro') && <p style={{ fontSize: isTablet ? 16 : 15, lineHeight: 1.85, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, textAlign: isTablet ? 'center' : 'left' }}>{txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}</p>}
-            {vis(cfg,'model_image') && (
-              <div>
-                <div style={{ position: 'relative', aspectRatio: isTablet ? '4 / 5.4' : '1 / 2.1', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
-                  {img1 ? <Image src={img1} alt="Collection" fill sizes={isTablet ? '30vw' : '38vw'} style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+
+    // ── TABLET: unchanged original layout ──
+    if (isTablet) {
+      return (
+        <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px clamp(32px,6vw,72px) 84px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px,0.72fr) minmax(0,1.28fr)', gap: 'clamp(32px,5vw,68px)', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 22 }}>
+              {vis(cfg,'intro') && <p style={{ fontSize: 16, lineHeight: 1.85, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, textAlign: 'center' }}>{txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}</p>}
+              {vis(cfg,'model_image') && (
+                <div>
+                  <div style={{ position: 'relative', aspectRatio: '4 / 5.4', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
+                    {img1 ? <Image src={img1} alt="Collection" fill sizes="30vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                  </div>
+                  {vis(cfg,'caption') && <p style={{ margin: '14px 0 0', fontSize: 13, color: clr(cfg,'caption','#aaa'), fontStyle: 'italic', lineHeight: 1.6 }}>{txt(cfg,'caption','Being Part Of Our Journey.')}</p>}
                 </div>
-                {vis(cfg,'caption') && <p style={{ margin: '14px 0 0', fontSize: 13, color: clr(cfg,'caption','#aaa'), fontStyle: 'italic', lineHeight: 1.6 }}>{txt(cfg,'caption','Being Part Of Our Journey.')}</p>}
+              )}
+            </div>
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 132px', gap: 24, alignItems: 'start', paddingBottom: 28, borderBottom: '1px solid #e8e8e5' }}>
+                <div>
+                  <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(46px,6vw,72px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 16px', letterSpacing: 0 }}>{txt(cfg,'feat_title','Statement Pieces 2025')}</h3>
+                  <p style={{ fontSize: 16, lineHeight: 1.75, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 22px', maxWidth: 330 }}>{txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}</p>
+                  {vis(cfg,'feat_btn') && <Link href="/shop" style={{ display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'feat_btn','GET STARTED')} →</Link>}
+                </div>
+                <div style={{ position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+                  {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="132px" style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
+                </div>
               </div>
+              <div>
+                {collectionRows.map((row, i) => vis(cfg, row.id) ? (
+                  <Link key={row.id} href="/shop" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 44px', gap: 16, alignItems: 'center', minHeight: 92, padding: '18px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none' }}>
+                    <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(34px,4.8vw,54px)', lineHeight: 1, color: clr(cfg,row.id,'#555'), overflowWrap: 'anywhere' }}>{txt(cfg,row.id,row.def)}</span>
+                    <span style={{ width: 44, height: 44, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 15 }}>→</span>
+                  </Link>
+                ) : null)}
+              </div>
+            </div>
+          </div>
+        </section>
+      )
+    }
+
+    // ── MOBILE: Premium layout — mirrors desktop left/right columns ──
+    // Left column: intro text + S-shape model image + caption
+    // Right column: featured card + collection rows
+    // Stacked vertically for mobile
+    return (
+      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '52px 0 68px' }}>
+
+        {/* Intro text — like desktop centered above left col */}
+        {vis(cfg,'intro') && (
+          <div style={{ padding: '0 20px', marginBottom: 24 }}>
+            <p style={{ fontSize: 13, lineHeight: 1.8, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, maxWidth: 300, textAlign: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
+              {txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}
+            </p>
+          </div>
+        )}
+
+        {/* S-shape model image — exact desktop geometry, full width mobile */}
+        {vis(cfg,'model_image') && (
+          <div style={{ position: 'relative', marginBottom: 16 }}>
+            <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', margin: '0 20px' }}>
+              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
+              <div style={{ position: 'relative', zIndex: 2, height: 'min(80vw,340px)', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '132%', transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  {img1
+                    ? <Image src={img1} alt="Collection" fill sizes="(max-width:768px) 92vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} />
+                    : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#c8c4bc,#b0aca4)' }} />}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.12))', pointerEvents: 'none' }} />
+                </div>
+                {/* White stripe at 65% like desktop */}
+                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 8, background: cfg.bgColor, zIndex: 3 }} />
+              </div>
+            </div>
+            {vis(cfg,'caption') && (
+              <p style={{ margin: '12px 20px 0', fontSize: 11, color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
+                {txt(cfg,'caption','Being Part Of Our Journey.')}
+              </p>
             )}
           </div>
+        )}
 
-          <div>
-            <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(0,1fr) 132px' : 'minmax(0,1fr) 96px', gap: isTablet ? 24 : 16, alignItems: 'start', paddingBottom: 28, borderBottom: '1px solid #e8e8e5' }}>
-              <div>
-                <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(46px,6vw,72px)' : 'clamp(40px,12vw,58px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 16px', letterSpacing: 0 }}>{txt(cfg,'feat_title','Statement Pieces 2025')}</h3>
-                <p style={{ fontSize: isTablet ? 16 : 15, lineHeight: 1.75, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 22px', maxWidth: 330 }}>{txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}</p>
-                {vis(cfg,'feat_btn') && <Link href="/shop" style={{ display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'feat_btn','GET STARTED')} →</Link>}
-              </div>
-              <div style={{ position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
-                {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes={isTablet ? '132px' : '96px'} style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
-              </div>
-            </div>
-
+        {/* Featured card — desktop right col top */}
+        <div style={{ padding: '0 20px', paddingBottom: 24, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 88px', gap: 16, alignItems: 'start' }}>
             <div>
-              {collectionRows.map((row, i) => vis(cfg, row.id) ? (
-                <Link key={row.id} href="/shop" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 44px', gap: 16, alignItems: 'center', minHeight: isTablet ? 92 : 84, padding: '18px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none' }}>
-                  <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(34px,4.8vw,54px)' : 'clamp(30px,9vw,46px)', lineHeight: 1, color: clr(cfg,row.id,'#555'), overflowWrap: 'anywhere' }}>{txt(cfg,row.id,row.def)}</span>
-                  <span style={{ width: 44, height: 44, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 15 }}>→</span>
+              <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(36px,12vw,54px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 10px', letterSpacing: '-0.2px' }}>
+                {txt(cfg,'feat_title','Statement Pieces 2025')}
+              </h3>
+              <p style={{ fontSize: 13, lineHeight: 1.7, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 16px' }}>
+                {txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}
+              </p>
+              {vis(cfg,'feat_btn') && (
+                <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: '1.5px solid #0d0d0d', borderRadius: 40, padding: '8px 18px', fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>
+                  {txt(cfg,'feat_btn','GET STARTED')} →
                 </Link>
-              ) : null)}
+              )}
+            </div>
+            {/* Featured thumbnail — desktop polygon */}
+            <div style={{ position: 'relative', width: 88, height: 88, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+              {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="88px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
+                : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
             </div>
           </div>
+        </div>
+
+        {/* Collection rows — desktop right col bottom */}
+        <div style={{ padding: '0 20px' }}>
+          {collectionRows.map((row, i) => (
+            vis(cfg, row.id) ? (
+              <Link key={i} href="/shop"
+                onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', minHeight: 72, background: 'transparent' }}
+              >
+                <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(28px,8vw,42px)', lineHeight: 1, color: hoveredRow === i ? '#0d0d0d' : clr(cfg,row.id,'#555'), letterSpacing: '-0.2px', transition: 'color 0.2s,transform 0.2s', transform: hoveredRow === i ? 'translateX(4px)' : 'translateX(0)', overflowWrap: 'anywhere' }}>
+                  {txt(cfg, row.id, row.def)}
+                </span>
+                <div style={{ width: 34, height: 34, border: `1.5px solid ${hoveredRow === i ? '#0d0d0d' : '#ddd'}`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s', background: hoveredRow === i ? '#0d0d0d' : 'transparent', marginLeft: 12 }}>
+                  <span style={{ color: hoveredRow === i ? '#fff' : '#bbb', fontSize: 13 }}>→</span>
+                </div>
+              </Link>
+            ) : null
+          ))}
         </div>
       </section>
     )

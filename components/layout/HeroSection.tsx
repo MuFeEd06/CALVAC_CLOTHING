@@ -77,50 +77,138 @@ export default function HeroSection({ settings }: Props) {
   if (viewport !== 'desktop') {
     const isTablet = viewport === 'tablet'
     const headline = `${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`
-    const padX = isTablet ? 'clamp(32px,7vw,72px)' : 'clamp(16px,5vw,28px)'
-    const heroH = isTablet ? 'clamp(520px,74vh,760px)' : 'auto'
+    const padX = isTablet ? 'clamp(32px,7vw,72px)' : '20px'
 
-    return (
-      <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: isTablet ? 'minmax(0,0.86fr) minmax(280px,1.14fr)' : '1fr', gap: isTablet ? 'clamp(28px,5vw,64px)' : 0, alignItems: 'center', minHeight: heroH, padding: isTablet ? `clamp(72px,10vh,118px) ${padX} clamp(56px,8vh,92px)` : `clamp(42px,10vw,58px) ${padX} clamp(48px,12vw,72px)` }}>
-          <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: isTablet ? 24 : 18 }}>
-            {vis('tag_left') && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <span style={{ fontSize: isTablet ? 11 : 10, fontWeight: 700, letterSpacing: isTablet ? '4px' : '3px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
-                  {el('tag_left')?.content ?? '//FASHION SS 2026'}
-                </span>
-                <span style={{ flex: 1, maxWidth: 82, height: 1, background: '#d0d0cc' }} />
-                <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '3px', color: merged.accentColor, fontFamily: 'Barlow,sans-serif' }}>SS 2026</span>
-              </div>
-            )}
-            {(vis('headline_left') || vis('headline_right')) && (
-              <h1 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: isTablet ? 'clamp(72px,10vw,118px)' : 'clamp(56px,19vw,86px)', lineHeight: 0.9, letterSpacing: 0, textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', maxWidth: isTablet ? 440 : 330, margin: 0 }}>
-                {headline}
-              </h1>
-            )}
-            {vis('description') && (
-              <p style={{ fontSize: isTablet ? 15 : 14, lineHeight: 1.75, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', maxWidth: isTablet ? 360 : 310, margin: 0 }}>
-                {description}
-              </p>
-            )}
-            {vis('new_drop') && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
-                <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>Shop Now</Link>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa' }}><span style={{ width: 7, height: 7, borderRadius: 999, background: merged.accentColor }} />{el('new_drop')?.content ?? 'Collection 2026'}</span>
-              </div>
-            )}
-          </div>
-
-          <div style={{ position: 'relative', marginTop: isTablet ? 0 : 28, minHeight: isTablet ? 560 : 'min(118vw,560px)', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: isTablet ? '0 4% 0 0' : '0 13% 0 17%', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), overflow: 'hidden' }}>
-              {heroImageUrl ? (
-                <Image src={heroImageUrl} alt="Hero model" fill priority sizes={isTablet ? '50vw' : '82vw'} style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
-              ) : null}
+    // ── TABLET: unchanged original layout ──
+    if (isTablet) {
+      return (
+        <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,0.86fr) minmax(280px,1.14fr)', gap: 'clamp(28px,5vw,64px)', alignItems: 'center', minHeight: 'clamp(520px,74vh,760px)', padding: `clamp(72px,10vh,118px) ${padX} clamp(56px,8vh,92px)` }}>
+            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {vis('tag_left') && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '4px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
+                    {el('tag_left')?.content ?? '//FASHION SS 2026'}
+                  </span>
+                  <span style={{ flex: 1, maxWidth: 82, height: 1, background: '#d0d0cc' }} />
+                  <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '3px', color: merged.accentColor, fontFamily: 'Barlow,sans-serif' }}>SS 2026</span>
+                </div>
+              )}
+              {(vis('headline_left') || vis('headline_right')) && (
+                <h1 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(72px,10vw,118px)', lineHeight: 0.9, letterSpacing: 0, textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', maxWidth: 440, margin: 0 }}>
+                  {headline}
+                </h1>
+              )}
+              {vis('description') && (
+                <p style={{ fontSize: 15, lineHeight: 1.75, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', maxWidth: 360, margin: 0 }}>
+                  {description}
+                </p>
+              )}
+              {vis('new_drop') && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
+                  <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>Shop Now</Link>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa' }}><span style={{ width: 7, height: 7, borderRadius: 999, background: merged.accentColor }} />{el('new_drop')?.content ?? 'Collection 2026'}</span>
+                </div>
+              )}
             </div>
-            {vis('orange_star') && <div className="animate-spin-slow" style={{ position: 'absolute', left: isTablet ? '2%' : '7%', top: isTablet ? '62%' : '55%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: isTablet ? 34 : 42, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
-            {vis('tag_right') && <p style={{ position: 'absolute', right: isTablet ? '0' : '-4%', top: isTablet ? '23%' : '18%', maxWidth: isTablet ? 160 : 120, fontSize: isTablet ? 34 : 26, lineHeight: 1.15, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '5px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0 }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
-            {vis('stat') && <div style={{ position: 'absolute', right: isTablet ? '2%' : '0', bottom: isTablet ? '6%' : '2%', textAlign: 'right' }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: isTablet ? 86 : 72, lineHeight: 0.85, fontWeight: 900, margin: 0 }}>{el('stat')?.content ?? '280K'}</p>{vis('stat_label') && <p style={{ marginTop: 8, fontSize: 10, letterSpacing: '3px', color: el('stat_label')?.color ?? '#aaa' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
+            <div style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: '0 4% 0 0', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), overflow: 'hidden' }}>
+                {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
+              </div>
+              {vis('orange_star') && <div className="animate-spin-slow" style={{ position: 'absolute', left: '2%', top: '62%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 34, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
+              {vis('tag_right') && <p style={{ position: 'absolute', right: 0, top: '23%', maxWidth: 160, fontSize: 34, lineHeight: 1.15, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '5px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0 }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
+              {vis('stat') && <div style={{ position: 'absolute', right: '2%', bottom: '6%', textAlign: 'right' }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 86, lineHeight: 0.85, fontWeight: 900, margin: 0 }}>{el('stat')?.content ?? '280K'}</p>{vis('stat_label') && <p style={{ marginTop: 8, fontSize: 10, letterSpacing: '3px', color: el('stat_label')?.color ?? '#aaa' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
+            </div>
           </div>
+        </section>
+      )
+    }
+
+    // ── MOBILE: Premium layout mirroring desktop structure ──
+    // Three zones stacked: [tag+headline] → [full-width hero image] → [description+cta+stat]
+    return (
+      <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd', minHeight: '100svh' }}>
+        {/* Guide lines (decorative, like desktop) */}
+        <div style={{ position: 'absolute', left: '33%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.04)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: '67%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.04)', pointerEvents: 'none' }} />
+
+        {/* Zone 1 — top text (tag + headline, left-aligned like desktop col 1) */}
+        <div style={{ position: 'relative', zIndex: 10, padding: `68px ${padX} 0` }}>
+          {vis('tag_left') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
+                {el('tag_left')?.content ?? '//FASHION · SS 2026'}
+              </span>
+              <span style={{ width: 24, height: 1, background: '#d0d0cc', flexShrink: 0 }} />
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '2px', color: merged.accentColor, fontFamily: 'Barlow,sans-serif', flexShrink: 0 }}>SS 2026</span>
+            </div>
+          )}
+          {(vis('headline_left') || vis('headline_right')) && (
+            <h1 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(64px,20vw,96px)', lineHeight: 0.88, letterSpacing: '-0.5px', textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', margin: '0 0 22px' }}>
+              {headline}
+            </h1>
+          )}
+        </div>
+
+        {/* Zone 2 — full-width hero image (like desktop centre column, but full width on mobile) */}
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de') }}>
+          {heroImageUrl ? (
+            <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
+          ) : null}
+          {/* Stat — overlaid bottom-right like desktop */}
+          {vis('stat') && (
+            <div style={{ position: 'absolute', right: padX, bottom: 14, textAlign: 'right', zIndex: 2 }}>
+              <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 'clamp(52px,17vw,76px)', lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>
+                {el('stat')?.content ?? '280K'}
+              </p>
+              {vis('stat_label') && (
+                <p style={{ marginTop: 6, fontSize: 8, letterSpacing: '2.5px', textTransform: 'uppercase', color: el('stat_label')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
+                  {el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}
+                </p>
+              )}
+            </div>
+          )}
+          {/* Orange star — bottom-left like desktop */}
+          {vis('orange_star') && (
+            <div className="animate-spin-slow" style={{ position: 'absolute', left: padX, bottom: '18%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 36, lineHeight: 1, zIndex: 2 }}>
+              {el('orange_star')?.content ?? '✦'}
+            </div>
+          )}
+          {/* Styled For Life tag — top-right like desktop */}
+          {vis('tag_right') && (
+            <p style={{ position: 'absolute', right: padX, top: 14, maxWidth: 90, fontSize: 18, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, textAlign: 'right', zIndex: 2 }}>
+              {el('tag_right')?.content ?? 'Styled For Life.'}
+            </p>
+          )}
+          {/* Bottom fade */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: `linear-gradient(to bottom,transparent,${merged.bgColor})`, pointerEvents: 'none', zIndex: 1 }} />
+        </div>
+
+        {/* Zone 3 — description + cta (like desktop col 1 bottom) */}
+        <div style={{ position: 'relative', zIndex: 10, padding: `20px ${padX} 52px` }}>
+          {vis('description') && (
+            <p style={{ fontSize: 13, lineHeight: 1.8, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', maxWidth: 340, margin: '0 0 24px' }}>
+              {description}
+            </p>
+          )}
+          {vis('new_drop') && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+              <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 8, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '10px 22px', fontSize: 10, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
+                Shop Now →
+              </Link>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>
+                <span style={{ width: 6, height: 6, borderRadius: 999, background: merged.accentColor, flexShrink: 0 }} />
+                {el('new_drop')?.content ?? 'Collection 2026'}
+              </span>
+            </div>
+          )}
+          {/* EST rule — decorative like desktop */}
+          {vis('est_rule') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 28, opacity: 0.4 }}>
+              <div style={{ width: 32, height: 1, background: '#0d0d0d' }} />
+              <span style={{ fontSize: 8, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>EST. 2026</span>
+            </div>
+          )}
         </div>
       </section>
     )
