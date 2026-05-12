@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
   Save, Eye, EyeOff, Move, RotateCcw, Layers,
@@ -790,9 +790,553 @@ function MobileElEditor({ el, onUpdate, onUpload, uploading }: {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  MAIN PAGE
+//  MOBILE PAGE CANVAS — renders accurate mobile section previews
+//  matching the actual live mobile layouts built in the components
 // ─────────────────────────────────────────────────────────────
-export default function AdminSettingsPage() {
+
+const CLIP_PATH = 'polygon(0% 0%, 80% 5%, 95% 35%, 100% 100%, 20% 95%, 5% 65%)'
+const S_SHAPE   = 'polygon(4% 0%,82% 0%,96% 34%,96% 100%,18% 100%,4% 64%)'
+const ARROW_CUT = 'polygon(100% 0%,100% 100%,0% 100%,40% 75%,0% 50%,40% 25%,0% 0%)'
+const FEAT_POLY = 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)'
+
+// Phone shell wrapper (260px wide screen inside)
+function PhoneShell({ children, bgColor }: { children: React.ReactNode; bgColor: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center' }}>
+      <div style={{ width: 260, flexShrink: 0, background: '#1a1a1a', borderRadius: 34, padding: '12px 9px', boxShadow: '0 20px 60px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.08)' }}>
+        {/* Status bar */}
+        <div style={{ height: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', marginBottom: 2 }}>
+          <span style={{ fontSize: 9, color: '#fff', fontWeight: 700, fontFamily: 'Barlow,sans-serif' }}>9:41</span>
+          <div style={{ width: 52, height: 12, background: '#1a1a1a', borderRadius: 6, border: '1.5px solid rgba(255,255,255,0.15)' }} />
+          <div style={{ display: 'flex', gap: 3 }}>
+            <div style={{ width: 12, height: 7, background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+            <div style={{ width: 7, height: 7, background: 'rgba(255,255,255,0.5)', borderRadius: '50%' }} />
+          </div>
+        </div>
+        {/* Screen */}
+        <div style={{ background: bgColor, borderRadius: 22, overflow: 'hidden', maxHeight: 520, overflowY: 'auto' }}>
+          {/* Navbar mock */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderBottom: `1px solid ${bgColor === '#0d0d0d' ? 'rgba(255,255,255,0.08)' : '#e8e8e5'}`, background: bgColor, position: 'sticky', top: 0, zIndex: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: 18 }}>
+              <div style={{ height: 1.5, background: bgColor === '#0d0d0d' ? '#fff' : '#0d0d0d', borderRadius: 1 }} />
+              <div style={{ height: 1.5, background: bgColor === '#0d0d0d' ? '#fff' : '#0d0d0d', borderRadius: 1 }} />
+            </div>
+            <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: '3px', color: bgColor === '#0d0d0d' ? '#fff' : '#0d0d0d' }}>CALVAC</span>
+            <div style={{ width: 16, height: 16, borderRadius: '50%', border: `1.5px solid ${bgColor === '#0d0d0d' ? 'rgba(255,255,255,0.3)' : '#0d0d0d'}` }} />
+          </div>
+          {children}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+          <div style={{ width: 64, height: 3, background: 'rgba(255,255,255,0.25)', borderRadius: 2 }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Reusable placeholder image box
+function ImgBox({ src, color, h, clip, label }: { src?: string; color: string; h: number; clip?: string; label?: string }) {
+  return (
+    <div style={{ width: '100%', height: h, background: src ? 'transparent' : color, clipPath: clip, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+      {src
+        ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+        : <div style={{ width: '100%', height: '100%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ImageIcon size={14} color="rgba(255,255,255,0.3)" /></div>}
+    </div>
+  )
+}
+
+// ── Per-section preview renderers ──
+
+function MobileHeroPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+  const imgEl = el('model_image') as any
+  const imgSrc = imgEl?.imageUrl ?? ''
+  const bgColor = cfg.bgColor
+
+  return (
+    <PhoneShell bgColor={bgColor}>
+      <div style={{ padding: '10px 12px 0' }}>
+        {/* Tag */}
+        {v('tag_left') && <p style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('tag_left')?.content ?? '//FASHION · SS 2026'}</p>}
+        {/* Headline */}
+        {(v('headline_left') || v('headline_right')) && (
+          <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 36, lineHeight: 0.88, textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', margin: '0 0 10px' }}>
+            {`${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`}
+          </h2>
+        )}
+      </div>
+      {/* Full-width hero image */}
+      <div style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: imgEl?.color ?? '#e2e2de', flexShrink: 0 }}>
+        {imgSrc ? <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgEl?.objectPosition ?? 'top center' }} /> : null}
+        {/* Overlays: stat, star, tag_right */}
+        {v('stat') && <div style={{ position: 'absolute', right: 10, bottom: 8 }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 28, lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>{el('stat')?.content ?? '280K'}</p>{v('stat_label') && <p style={{ margin: '3px 0 0', fontSize: 6, letterSpacing: '2px', textTransform: 'uppercase', color: el('stat_label')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', textAlign: 'right' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
+        {v('orange_star') && <div style={{ position: 'absolute', left: 10, bottom: '18%', color: el('orange_star')?.color ?? accentColor, fontSize: 18, lineHeight: 1 }}>✦</div>}
+        {v('tag_right') && <p style={{ position: 'absolute', right: 10, top: 6, fontSize: 9, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, maxWidth: 60, textAlign: 'right' }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32, background: `linear-gradient(to bottom,transparent,${bgColor})`, pointerEvents: 'none' }} />
+      </div>
+      <div style={{ padding: '8px 12px 16px' }}>
+        {v('description') && <p style={{ fontSize: 9, lineHeight: 1.8, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px' }}>{el('description')?.content ?? ''}</p>}
+        {v('new_drop') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '5px 12px' }}><span style={{ fontSize: 7, fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>Shop Now →</span></div>}
+      </div>
+    </PhoneShell>
+  )
+}
+
+function MobileFeaturedPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+
+  return (
+    <PhoneShell bgColor={cfg.bgColor}>
+      <div style={{ padding: '10px 12px 16px', position: 'relative', overflow: 'hidden' }}>
+        {/* S watermark */}
+        <div style={{ position: 'absolute', left: '10%', top: '-4%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 160, lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
+        {/* Headline */}
+        {v('headline') && <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 0.91, color: el('headline')?.color ?? '#0d0d0d', margin: '0 0 8px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? 'All - about\nmoments ©26'}</h2>}
+        {/* Main image S-shape */}
+        {v('main_image') && <div style={{ width: '100%', height: 130, overflow: 'hidden', clipPath: S_SHAPE, background: el('main_image')?.color ?? '#c8b890', marginBottom: 6, position: 'relative' }}>
+          {el('main_image')?.imageUrl ? <img src={(el('main_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
+          <div style={{ position: 'absolute', top: '69%', left: 0, right: 0, height: 4, background: cfg.bgColor, zIndex: 3 }} />
+        </div>}
+        {/* Caption + price row */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
+          {v('caption1') && <p style={{ fontSize: 7, color: el('caption1')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, flex: 1, paddingRight: 8, fontFamily: 'Barlow,sans-serif' }}>{el('caption1')?.content ?? ''}</p>}
+          {v('price1') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price1')?.color ?? '#0d0d0d', flexShrink: 0 }}>{el('price1')?.content ?? '($120)'}</p>}
+        </div>
+        {/* Desc + star + thumb row */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
+          {v('star') && <span style={{ color: el('star')?.color ?? accentColor, fontSize: 13, flexShrink: 0, paddingTop: 1 }}>✦</span>}
+          {v('description') && <p style={{ flex: 1, fontSize: 8, lineHeight: 1.7, color: el('description')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: 0 }}>{el('description')?.content ?? ''}</p>}
+          {v('thumb_image') && <div style={{ width: 38, height: 46, overflow: 'hidden', background: el('thumb_image')?.color ?? '#c8c0b8', flexShrink: 0, clipPath: S_SHAPE }}>
+            {el('thumb_image')?.imageUrl ? <img src={(el('thumb_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
+          </div>}
+        </div>
+        <div style={{ height: 1, background: '#e0e0dd', margin: '6px 0 8px' }} />
+        {/* Product 2 */}
+        {v('product2_img') && <div style={{ width: '76%', height: 80, overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: el('product2_img')?.color ?? '#5a5050', marginBottom: 6, position: 'relative' }}>
+          {el('product2_img')?.imageUrl ? <img src={(el('product2_img') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
+        </div>}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
+          {v('caption2') && <p style={{ fontSize: 7, color: el('caption2')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, flex: 1, paddingRight: 8, fontFamily: 'Barlow,sans-serif' }}>{el('caption2')?.content ?? ''}</p>}
+          {v('price2') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price2')?.color ?? '#0d0d0d', flexShrink: 0 }}>{el('price2')?.content ?? '(45%)'}</p>}
+        </div>
+        {v('learn_more') && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 4 }}><div style={{ width: 5, height: 5, borderRadius: '50%', background: accentColor }} /><div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ddd' }} /></div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '4px 10px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('learn_more')?.content ?? 'LEARN MORE'} →</span></div>
+        </div>}
+      </div>
+    </PhoneShell>
+  )
+}
+
+function MobileCategoriesPreview({ cfg, categoryItems }: { cfg: PageConfig; categoryItems: CategoryItem[] }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+  const modelImgSrc = el('model_image')?.imageUrl ?? ''
+  const visibleCats = categoryItems.filter(c => c.visible !== false).slice(0, 5)
+  const [activeCat, setActiveCat] = React.useState(0)
+  const activeImg = visibleCats[activeCat]?.imageUrl || modelImgSrc
+
+  return (
+    <PhoneShell bgColor={cfg.bgColor}>
+      <div style={{ padding: '8px 0 16px', position: 'relative', overflow: 'hidden' }}>
+        {/* C watermark */}
+        <div style={{ position: 'absolute', right: '-8%', top: '-2%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 160, lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>C</div>
+        {/* Label row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', marginBottom: 10 }}>
+          <span style={{ fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif', flexShrink: 0 }}>{el('label')?.content ?? '[CATEGORIES]'}</span>
+          <div style={{ flex: 1, maxWidth: 60, borderTop: '1px dashed #ccc' }} />
+        </div>
+        {/* 42/58 split: image left, list right */}
+        <div style={{ display: 'grid', gridTemplateColumns: '42fr 58fr', gap: 0, alignItems: 'start' }}>
+          {/* Left: image with arrow cutout */}
+          <div style={{ position: 'relative', height: 130, overflow: 'hidden', background: el('model_image')?.color ?? '#e2e0dc' }}>
+            {activeImg
+              ? <img key={activeImg} src={activeImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', transition: 'opacity 0.3s' }} />
+              : <div style={{ width: '100%', height: '100%', background: el('model_image')?.color ?? '#e2e0dc' }} />}
+            {/* Arrow cutout */}
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '28%', background: cfg.bgColor, clipPath: ARROW_CUT, zIndex: 2 }} />
+          </div>
+          {/* Right: category list */}
+          <div style={{ paddingRight: 12, paddingTop: 2 }}>
+            {visibleCats.map((cat, i) => (
+              <div key={cat.id} onClick={() => setActiveCat(i)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e8e8e5', padding: `${i === activeCat ? 4 : 2}px 0`, cursor: 'pointer' }}>
+                <span style={{ fontSize: 6, fontWeight: 600, color: i === activeCat ? '#0d0d0d' : '#ccc', fontFamily: 'Barlow,sans-serif', width: 16, flexShrink: 0 }}>[{String(i+1).padStart(2,'0')}]</span>
+                <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: i === activeCat ? 18 : 11, lineHeight: 1, color: i === activeCat ? (cat.color ?? '#0d0d0d') : '#ccc', textTransform: 'lowercase', flex: 1, textAlign: 'right', paddingRight: 4, transition: 'font-size 0.25s' }}>{cat.name}</span>
+                <span style={{ fontSize: 6, color: i === activeCat ? '#888' : '#ccc', fontFamily: 'Barlow,sans-serif', width: 22, textAlign: 'right' }}>({cat.count})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Description + SEE PRODUCT below */}
+        <div style={{ padding: '10px 12px 0' }}>
+          {v('description') && <p style={{ fontSize: 8, lineHeight: 1.8, color: el('description')?.color ?? '#666', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('description')?.content ?? ''}</p>}
+          {v('see_product') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1.5px solid ${el('see_product')?.color ?? '#0d0d0d'}`, borderRadius: 20, padding: '4px 10px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('see_product')?.color ?? '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('see_product')?.content ?? 'SEE PRODUCT'} →</span></div>}
+        </div>
+      </div>
+    </PhoneShell>
+  )
+}
+
+function MobileCarouselPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+  const cardIds = ['card1','card2','card3','card4','card5','card6']
+  const [activeCard, setActiveCard] = React.useState(2)
+
+  return (
+    <PhoneShell bgColor={cfg.bgColor}>
+      <div style={{ padding: '10px 0 14px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '0 12px', marginBottom: 14 }}>
+          <div>
+            {v('title') && <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: el('title')?.color ?? '#0d0d0d', margin: '0 0 2px' }}>{el('title')?.content ?? 'SHOP THE COLLECTIONS'}</p>}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {v('year') && <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('year')?.content ?? '2026'}</span>}
+              {v('other') && <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('other')?.content ?? '[Other]'}</span>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 5 }}>
+            <button onClick={() => setActiveCard(c => Math.max(0,c-1))} style={{ width: 24, height: 24, border: '1.5px solid #0d0d0d', borderRadius: '50%', background: 'none', cursor: 'pointer', fontSize: 10, color: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>←</button>
+            <button onClick={() => setActiveCard(c => Math.min(5,c+1))} style={{ width: 24, height: 24, border: '1.5px solid #0d0d0d', borderRadius: '50%', background: 'none', cursor: 'pointer', fontSize: 10, color: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>→</button>
+          </div>
+        </div>
+        {/* Cards track */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, paddingLeft: 12, overflowX: 'hidden', paddingBottom: 18 }}>
+          {cardIds.map((cardId, i) => {
+            const cardEl = el(cardId) as any
+            const isActive = i === activeCard
+            const w = isActive ? 88 : 62
+            const h = isActive ? 128 : 96
+            const bg = cardEl?.color ?? '#c8b890'
+            const src = cardEl?.imageUrl ?? ''
+            const dist = Math.abs(i - activeCard)
+            return (
+              <div key={cardId} onClick={() => setActiveCard(i)} style={{ flexShrink: 0, width: w, height: h, overflow: 'hidden', background: bg, clipPath: CLIP_PATH, cursor: 'pointer', transform: `translateY(${isActive ? -14 : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.9 : 0.6, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)', position: 'relative' }}>
+                {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : <div style={{ width: '100%', height: '100%', background: bg }} />}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))' }} />
+                {isActive && v('wear') && <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center' }}><span style={{ fontSize: 6, color: el('wear')?.color ?? 'rgba(255,255,255,0.9)', fontFamily: 'Barlow,sans-serif' }}>{el('wear')?.content ?? '[Wear the Moment]'}</span></div>}
+              </div>
+            )
+          })}
+        </div>
+        {/* Dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 4, marginTop: -12 }}>
+          {cardIds.map((_,i) => <div key={i} onClick={() => setActiveCard(i)} style={{ width: i === activeCard ? 16 : 5, height: 3, borderRadius: 2, background: i === activeCard ? '#0d0d0d' : '#ccc', cursor: 'pointer', transition: 'width 0.3s' }} />)}
+        </div>
+      </div>
+    </PhoneShell>
+  )
+}
+
+function MobileCollectionsPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+  const modelSrc = el('model_image')?.imageUrl ?? ''
+  const featSrc  = el('featured_img')?.imageUrl ?? ''
+
+  return (
+    <PhoneShell bgColor={cfg.bgColor}>
+      <div style={{ padding: '10px 12px 16px' }}>
+        {/* Intro */}
+        {v('intro') && <p style={{ fontSize: 8, lineHeight: 1.8, color: el('intro')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px', textAlign: 'center' }}>{el('intro')?.content ?? ''}</p>}
+        {/* S-shape model image */}
+        {v('model_image') && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', height: 120, overflow: 'hidden', background: el('model_image')?.color ?? '#d8d4cc' }}>
+              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
+              <div style={{ position: 'relative', zIndex: 2, height: '100%' }}>
+                {modelSrc ? <img src={modelSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 6, background: cfg.bgColor, zIndex: 3 }} />
+              </div>
+            </div>
+            {v('caption') && <p style={{ margin: '6px 0 0', fontSize: 7, color: el('caption')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>{el('caption')?.content ?? ''}</p>}
+          </div>
+        )}
+        {/* Featured card */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 56px', gap: 10, alignItems: 'start', paddingBottom: 10, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
+          <div>
+            {v('feat_title') && <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 18, lineHeight: 0.98, color: el('feat_title')?.color ?? '#0d0d0d', margin: '0 0 5px' }}>{el('feat_title')?.content ?? 'Statement Pieces 2025'}</h3>}
+            {v('feat_desc') && <p style={{ fontSize: 8, lineHeight: 1.7, color: el('feat_desc')?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('feat_desc')?.content ?? ''}</p>}
+            {v('feat_btn') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '3px 9px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('feat_btn')?.content ?? 'GET STARTED'} →</span></div>}
+          </div>
+          <div style={{ width: 56, height: 56, overflow: 'hidden', background: el('featured_img')?.color ?? '#b8c8b8', clipPath: FEAT_POLY }}>
+            {featSrc ? <img src={featSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
+          </div>
+        </div>
+        {/* Collection rows */}
+        {['col1','col2','col3'].map(id => v(id) ? (
+          <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e8e8e5' }}>
+            <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 14, color: el(id)?.color ?? '#555' }}>{el(id)?.content ?? id}</span>
+            <div style={{ width: 22, height: 22, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><span style={{ fontSize: 9, color: '#bbb' }}>→</span></div>
+          </div>
+        ) : null)}
+      </div>
+    </PhoneShell>
+  )
+}
+
+function MobileFooterPreview({ cfg }: { cfg: PageConfig }) {
+  const el = (id: string) => cfg.elements.find(e => e.id === id)
+  const v  = (id: string) => el(id)?.visible !== false
+  const isFooter = true
+
+  return (
+    <PhoneShell bgColor={cfg.bgColor}>
+      <div style={{ padding: '14px 12px 20px' }}>
+        {v('headline') && <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 20, lineHeight: 1.05, color: el('headline')?.color ?? '#fff', margin: '0 0 12px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? ''}</h2>}
+        {/* Email input mock */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 14, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, overflow: 'hidden' }}>
+          <div style={{ flex: 1, padding: '6px 8px', fontSize: 8, color: el('email_row')?.color ?? '#555', fontFamily: 'Barlow,sans-serif' }}>{el('email_row')?.content ?? 'Send email to us'}</div>
+          <div style={{ background: '#f04e0f', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: '#fff' }}>→</span></div>
+        </div>
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 0 12px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {[['location','📍'],['email','✉'],['phone','📞'],['hours','🕐']].map(([id, icon]) => v(id) ? (
+            <div key={id}>
+              <p style={{ fontSize: 7, color: el(id)?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{icon} {el(id)?.content ?? ''}</p>
+            </div>
+          ) : null)}
+        </div>
+        {v('copyright') && <p style={{ fontSize: 7, color: el('copyright')?.color ?? '#444', fontFamily: 'Barlow,sans-serif', margin: '14px 0 0', textAlign: 'center' }}>{el('copyright')?.content ?? ''}</p>}
+      </div>
+    </PhoneShell>
+  )
+}
+
+// ── Mobile Element Property Panel (for mobileConfigs PageElement) ──
+function MobileElementPanel({
+  pageId, selected, uploading,
+  onUpdate, onUpload, onResetPos, accentColor,
+}: {
+  pageId: PageId
+  selected?: PageElement
+  uploading: boolean
+  accentColor: string
+  onUpdate: (id: string, patch: Partial<PageElement>) => void
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void
+  onResetPos: (id: string) => void
+}) {
+  if (!selected) {
+    return (
+      <div style={{ textAlign: 'center', paddingTop: 48, color: '#ccc' }}>
+        <Layers size={24} style={{ margin: '0 auto 10px', display: 'block' }} />
+        <p style={{ fontSize: 11, lineHeight: 1.6, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>Click an element<br/>in the list to edit</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0ee' }}>
+        <p style={{ fontSize: 13, fontWeight: 700, margin: 0, fontFamily: 'Barlow,sans-serif' }}>{selected.label}</p>
+        <button onClick={() => onUpdate(selected.id, { visible: !selected.visible })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: selected.visible ? '#0d0d0d' : '#ccc' }}>
+          {selected.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+        </button>
+      </div>
+
+      {selected.isImage ? (
+        <>
+          <PropRow label="Image">
+            {selected.imageUrl ? (
+              <div style={{ position: 'relative', marginBottom: 8 }}>
+                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 8 }} />
+                <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 11, lineHeight: 1 }}>×</button>
+              </div>
+            ) : (
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e0e0de', borderRadius: 8, padding: '14px 12px', cursor: 'pointer', gap: 5, marginBottom: 8 }}>
+                <ImageIcon size={18} color="#ccc" />
+                <span style={{ fontSize: 10, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{uploading ? 'Uploading…' : 'Click to upload'}</span>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => onUpload(e, selected.id)} disabled={uploading} />
+              </label>
+            )}
+          </PropRow>
+          <PropRow label="Placeholder Color">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="color" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 32, height: 32, border: '1px solid #e8e8e5', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+            </div>
+          </PropRow>
+          <PropRow label="Image Focus">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 5 }}>
+              {[['Top','top center'],['Center','center center'],['Bottom','bottom center'],['Left','center left'],['Right','center right'],['Top L','top left']].map(([lbl,val]) => (
+                <button key={val} onClick={() => onUpdate(selected.id, { objectPosition: val })} style={{ padding: '4px', fontSize: 9, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === val ? accentColor : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === val ? accentColor : '#666', fontFamily: 'Barlow,sans-serif' }}>{lbl}</button>
+              ))}
+            </div>
+          </PropRow>
+        </>
+      ) : (
+        <>
+          {selected.content !== undefined && (
+            <PropRow label="Content">
+              <textarea value={selected.content} onChange={e => onUpdate(selected.id, { content: e.target.value })} rows={3} style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '7px 9px', fontSize: 11, fontFamily: 'Barlow,sans-serif', resize: 'none', outline: 'none', boxSizing: 'border-box' as const }} />
+            </PropRow>
+          )}
+          {selected.fontSize !== undefined && (
+            <PropRow label={`Font Size: ${selected.fontSize}px`}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input type="range" min={7} max={120} value={selected.fontSize} onChange={e => onUpdate(selected.id, { fontSize: +e.target.value })} style={{ flex: 1 }} />
+                <input type="number" value={selected.fontSize} onChange={e => onUpdate(selected.id, { fontSize: +e.target.value })} style={{ width: 42, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 5px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+              </div>
+            </PropRow>
+          )}
+          <PropRow label="Text Color">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="color" value={selected.color ?? '#000000'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 32, height: 32, border: '1px solid #e8e8e5', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={selected.color ?? '#000000'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+            </div>
+          </PropRow>
+        </>
+      )}
+    </>
+  )
+}
+
+// ── Main Mobile Page Editor ──
+function MobilePageEditor({
+  pages, configs, activePage, selectedEl, uploading, categoryItems,
+  onActivePage, onSelectedEl, onUpdateEl, onResetPage, onUpload, onColorChange, sideBtn,
+}: {
+  pages: PageId[]
+  configs: Record<PageId, PageConfig>
+  activePage: PageId
+  selectedEl: string | null
+  uploading: boolean
+  categoryItems: CategoryItem[]
+  onActivePage: (page: PageId) => void
+  onSelectedEl: (id: string | null) => void
+  onUpdateEl: (id: string, patch: Partial<PageElement>) => void
+  onResetPage: () => void
+  onUpload: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void
+  onColorChange: (key: 'bgColor' | 'accentColor', value: string) => void
+  sideBtn: (active: boolean) => React.CSSProperties
+}) {
+  const cfg    = configs[activePage]
+  const selEl  = cfg.elements.find(e => e.id === selectedEl)
+
+  // Section-specific preview
+  const renderPreview = () => {
+    switch (activePage) {
+      case 'hero':             return <MobileHeroPreview cfg={cfg} accentColor={cfg.accentColor} />
+      case 'featured_moments': return <MobileFeaturedPreview cfg={cfg} accentColor={cfg.accentColor} />
+      case 'categories':       return <MobileCategoriesPreview cfg={cfg} categoryItems={categoryItems} />
+      case 'carousel':         return <MobileCarouselPreview cfg={cfg} accentColor={cfg.accentColor} />
+      case 'collections':      return <MobileCollectionsPreview cfg={cfg} accentColor={cfg.accentColor} />
+      case 'footer':           return <MobileFooterPreview cfg={cfg} />
+      default:                 return null
+    }
+  }
+
+  return (
+    <>
+      {/* ── Left sidebar: section list ── */}
+      <div style={{ width: 164, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
+        <p style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', padding: '4px 8px 10px', fontFamily: 'Barlow,sans-serif' }}>SECTIONS</p>
+        {pages.map(pid => {
+          const c = configs[pid]
+          return (
+            <button key={pid} onClick={() => { onActivePage(pid); onSelectedEl(null) }} style={sideBtn(activePage === pid)}>
+              <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{c.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: activePage === pid ? '#0d0d0d' : '#666', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.label}</p>
+                <p style={{ fontSize: 9, color: '#aaa', margin: 0 }}>{c.elements.length} elements</p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ── Center: phone preview + controls ── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Info banner */}
+        <div style={{ background: '#eef4ff', border: '1px solid #c7d7f8', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Smartphone size={13} color="#4b72e8" />
+          <span style={{ fontSize: 11, color: '#2a4db8', fontFamily: 'Barlow,sans-serif', lineHeight: 1.5, flex: 1 }}>
+            <strong>Mobile editor</strong> — live preview matches actual mobile layout. Click elements in the right panel to edit. Changes only affect mobile screens.
+          </span>
+          <button onClick={() => { onResetPage(); onSelectedEl(null) }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 6, border: '1px solid #ddd', background: '#fff', cursor: 'pointer', fontSize: 10, fontFamily: 'Barlow,sans-serif', color: '#666', flexShrink: 0 }}>
+            <RotateCcw size={10} /> Reset
+          </button>
+        </div>
+
+        {/* Visibility chips */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {cfg.elements.map(e => (
+            <button key={e.id} onClick={() => { onUpdateEl(e.id, { visible: !e.visible }); onSelectedEl(null) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 8px', borderRadius: 16, border: 'none', cursor: 'pointer', background: e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible ? '#fff' : '#888', fontSize: 9, fontFamily: 'Barlow,sans-serif', transition: 'all 0.12s' }}>
+              {e.visible ? <Eye size={8} /> : <EyeOff size={8} />}{e.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Phone preview */}
+        {renderPreview()}
+
+        {/* Page background color */}
+        <div style={{ background: '#fff', borderRadius: 10, padding: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {([['Section Background', 'bgColor'], ['Accent Color', 'accentColor']] as const).map(([lbTxt, key]) => (
+            <div key={key}>
+              <label style={{ ...lbl10, marginBottom: 6, fontSize: 9 }}>{lbTxt}</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <input type="color" value={key === 'bgColor' ? cfg.bgColor : cfg.accentColor} onChange={e => onColorChange(key, e.target.value)} style={{ width: 30, height: 30, border: '1px solid #e8e8e5', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+                <code style={{ fontSize: 10, color: '#666' }}>{key === 'bgColor' ? cfg.bgColor : cfg.accentColor}</code>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Right: element list + property editor ── */}
+      <div style={{ width: 248, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+
+        {/* Element list header */}
+        <div style={{ padding: '11px 14px 10px', borderBottom: '1px solid #f0f0ee', background: '#fafaf9', flexShrink: 0 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, margin: 0, fontFamily: 'Barlow,sans-serif' }}>{cfg.label} — Elements</p>
+          <p style={{ fontSize: 9, color: '#aaa', margin: '2px 0 0', fontFamily: 'Barlow,sans-serif' }}>Click to select · edit properties below</p>
+        </div>
+
+        {/* Scrollable list */}
+        <div style={{ overflowY: 'auto', borderBottom: '1px solid #f0f0ee' }}>
+          {cfg.elements.map((e, i) => (
+            <button key={e.id} onClick={() => onSelectedEl(selectedEl === e.id ? null : e.id)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', border: 'none', cursor: 'pointer', background: selectedEl === e.id ? '#fff8f6' : '#fff', borderLeft: `3px solid ${selectedEl === e.id ? '#f04e0f' : 'transparent'}`, marginBottom: 0, textAlign: 'left', transition: 'background 0.1s', opacity: e.visible ? 1 : 0.4 }}
+              onMouseEnter={ev => { if (selectedEl !== e.id) ev.currentTarget.style.background = '#f5f5f3' }}
+              onMouseLeave={ev => { if (selectedEl !== e.id) ev.currentTarget.style.background = '#fff' }}
+            >
+              {/* Type badge */}
+              <div style={{ width: 26, height: 26, borderRadius: 6, background: e.isImage ? '#e8f0fe' : e.type === 'product_card' ? '#fff4f0' : e.type === 'avatars' ? '#f0fff4' : '#f0efed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {e.isImage ? <ImageIcon size={12} color="#4b72e8" /> : <span style={{ fontSize: 9, fontWeight: 700, color: '#666' }}>T</span>}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, margin: 0, fontFamily: 'Barlow,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: selectedEl === e.id ? '#f04e0f' : '#0d0d0d' }}>{e.label}</p>
+                <p style={{ fontSize: 9, color: '#aaa', margin: 0, fontFamily: 'Barlow,sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {e.isImage ? (e.imageUrl ? '● Image set' : '○ No image') : (e.content ?? '—').replace(/\n/g,' ').slice(0,26)}
+                </p>
+              </div>
+              <span style={{ fontSize: 9, color: '#ccc', fontFamily: 'Barlow,sans-serif', flexShrink: 0 }}>#{i+1}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Property editor below list */}
+        <div style={{ padding: 14, overflowY: 'auto', flex: 1 }}>
+          <MobileElementPanel
+            pageId={activePage}
+            selected={selEl}
+            uploading={uploading}
+            accentColor={cfg.accentColor}
+            onUpdate={onUpdateEl}
+            onUpload={onUpload}
+            onResetPos={() => {}}
+          />
+        </div>
+      </div>
+    </>
+  )
+}
+
+
   const [tab,        setTab]        = useState<Tab>('desktop')
   const [saving,     setSaving]     = useState(false)
   const [saved,      setSaved]      = useState(false)
@@ -1289,8 +1833,7 @@ export default function AdminSettingsPage() {
         )}
 
         {tab === 'mobile' && (
-          <DeviceCanvasEditor
-            device="mobile"
+          <MobilePageEditor
             pages={desktopPages}
             configs={mobileConfigs}
             activePage={activeMobileCanvasPage}
