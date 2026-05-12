@@ -139,6 +139,111 @@ export default function CollectionCarousel({ products, settings }: Props) {
     else centerActive(activeIdx)
   }
 
+  // ── MOBILE: Dedicated premium carousel ──
+  if (viewport === 'mobile') {
+    const mCardW = 152, mCardWActive = 208, mCardH = 248, mCardHActive = 322, mGap = 10, mLift = 26
+
+    const getMobileCardX = (idx: number, active: number) => {
+      let x = 0
+      for (let k = 0; k < idx; k++) x += (k === active ? mCardWActive : mCardW) + mGap
+      return x
+    }
+
+    const centerActiveMobile = (newActive: number) => {
+      const vW = typeof window !== 'undefined' ? window.innerWidth : 390
+      const cardX = getMobileCardX(newActive, newActive)
+      setTrackX(-(cardX + mCardWActive / 2 - vW / 2))
+    }
+
+    const mGoTo = (newActive: number) => {
+      let target = newActive
+      if (target < total / 2) target += total
+      if (target > total * 2.5) target -= total
+      setActiveIdx(target)
+      centerActiveMobile(target)
+    }
+
+    return (
+      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '48px 0 58px' }}>
+        {/* Header */}
+        <div style={{ ...fadeIn(progress, 0.0, 0.38), ...exitStyle, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '0 20px', marginBottom: 26, gap: 12 }}>
+          <div>
+            <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 16, fontWeight: 800, letterSpacing: '2px', color: '#0d0d0d', marginBottom: 4 }}>
+              {txt(cfg,'title','SHOP THE COLLECTIONS')}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 13, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'year','2026')}</span>
+              <span style={{ fontSize: 12, color: '#aaa', letterSpacing: '2px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'other','[Other]')}</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {[{ fn: () => mGoTo(activeIdx - 1), label: '←' }, { fn: () => mGoTo(activeIdx + 1), label: '→' }].map((b, i) => (
+              <button key={i} onClick={b.fn} style={{ width: 36, height: 36, border: '1.5px solid #0d0d0d', borderRadius: '50%', background: 'none', cursor: 'pointer', fontSize: 14, color: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Draggable track */}
+        <div
+          style={{ ...fadeIn(progress, 0.08, 0.52), overflow: 'hidden', cursor: 'grab', paddingBottom: mLift + 8, touchAction: 'pan-y' }}
+          onMouseDown={e => onDragStart(e.clientX)} onMouseMove={e => onDragMove(e.clientX)} onMouseUp={e => onDragEnd(e.clientX)} onMouseLeave={e => { if (dragging.current) onDragEnd(e.clientX) }}
+          onTouchStart={e => onDragStart(e.touches[0].clientX)} onTouchMove={e => onDragMove(e.touches[0].clientX)} onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: mGap, transform: `translateX(${trackX}px)`, transition: dragging.current ? 'none' : 'transform 0.5s cubic-bezier(0.4,0,0.2,1)', willChange: 'transform', width: 'max-content' }}>
+            {items.map((item, i) => {
+              const isActive = i === activeIdx
+              const w = isActive ? mCardWActive : mCardW
+              const h = isActive ? mCardHActive : mCardH
+              const bg = cardColors[i % cardColors.length]
+              const imgSrc = cardImgs[i % cardImgs.length] || item?.images?.[0]
+              const dist = Math.abs(i - activeIdx)
+              return (
+                <div
+                  key={i}
+                  onClick={() => {
+                    if (dragDistance.current > 8) return
+                    if (isActive && item?.slug) router.push(`/product/${item.slug}`)
+                    else mGoTo(i)
+                  }}
+                  style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -mLift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.45, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}
+                >
+                  {imgSrc
+                    ? <Image src={imgSrc} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
+                    : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 8 }}>{item?.name}</span></div>}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
+                  {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
+                  {isActive && vis(cfg,'wear') && (
+                    <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+                      <span style={{ fontSize: 9, color: clr(cfg,'wear','rgba(255,255,255,0.9)'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'wear','[Wear the Moment]')}</span>
+                    </div>
+                  )}
+                  {isActive && item?.slug && (
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 12px 10px', pointerEvents: 'none' }}>
+                      {item?.name && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 13, color: '#fff', margin: '0 0 3px', letterSpacing: '0.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{item.name}</p>}
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 10px' }}>
+                        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif' }}>View</span>
+                        <span style={{ fontSize: 9, color: '#fff' }}>→</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Dots */}
+        <div style={{ ...fadeIn(progress, 0.18, 0.58), display: 'flex', justifyContent: 'center', gap: 6, marginTop: -38 }}>
+          {base.map((_, i) => (
+            <button key={i} onClick={() => mGoTo(total + i)} style={{ width: dotIdx === i ? 22 : 6, height: 4, borderRadius: 2, background: dotIdx === i ? '#0d0d0d' : '#ccc', border: 'none', cursor: 'pointer', padding: 0, transition: 'width 0.3s,background 0.3s' }} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: isDesktop ? '64px 0 72px' : isTablet ? '62px 0 76px' : '52px 0 64px' }}>
 
