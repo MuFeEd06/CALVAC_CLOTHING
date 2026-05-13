@@ -1336,7 +1336,10 @@ function MobilePageEditor({
   )
 }
 
-
+// ─────────────────────────────────────────────────────────────
+//  MAIN PAGE
+// ─────────────────────────────────────────────────────────────
+export default function AdminSettingsPage() {
   const [tab,        setTab]        = useState<Tab>('desktop')
   const [saving,     setSaving]     = useState(false)
   const [saved,      setSaved]      = useState(false)
