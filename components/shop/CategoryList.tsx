@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import type { Category, SiteSettings } from '@/types'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
+import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { CATEGORIES_DEFAULTS } from '@/lib/pageDefaults'
 import { useViewportKind } from '@/lib/useBreakpoint'
 
@@ -57,6 +58,8 @@ export default function CategoryList({ categories, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const viewport = useViewportKind()
   const cfg = mergeDeviceConfig(settings ?? null, 'categories', CATEGORIES_DEFAULTS as any, viewport)
+  const txCfg = getScrollTransitionConfig(settings ?? null)
+  const exitStyle = scrollExitStyle(scrollY, txCfg)
   const [activeIdx, setActiveIdx] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
   const parallaxY = (scrollY * 0.2).toFixed(1)
@@ -231,8 +234,8 @@ export default function CategoryList({ categories, settings }: Props) {
             </div>
           </div>
 
-          {/* RIGHT — category scroll wheel (same desktop logic, mobile-scaled fonts) */}
-          <div ref={listRef} style={{ ...fadeIn(progress, 0.08, 0.46), paddingTop: 4, paddingRight: 16, cursor: 'ns-resize' }}>
+          {/* RIGHT — category scroll wheel with exitStyle */}
+          <div ref={listRef} style={{ ...fadeIn(progress, 0.08, 0.46), ...exitStyle, paddingTop: 4, paddingRight: 16, cursor: 'ns-resize' }}>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {visibleItems.map((cat, i) => (
                 <li key={cat.id} style={{ borderBottom: '1px solid #e8e8e5' }}>
@@ -256,8 +259,8 @@ export default function CategoryList({ categories, settings }: Props) {
           </div>
         </div>
 
-        {/* Below image — description + SEE PRODUCT (mobile-padded, absolute-like desktop) */}
-        <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 1 }}>
+        {/* Below image — description + SEE PRODUCT — exitStyle + fadeIn */}
+        <div style={{ ...fadeIn(progress, 0.15, 0.5), ...exitStyle, padding: '20px 20px 0', position: 'relative', zIndex: 1 }}>
           {vis(cfg, 'description') && (
             <p style={{ fontSize: 13, lineHeight: 1.8, color: clr(cfg, 'description', '#666'), fontFamily: 'Barlow,sans-serif', margin: '0 0 20px', maxWidth: 340 }}>
               {description}
