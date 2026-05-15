@@ -1129,33 +1129,60 @@ function MobileElementPanel({
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid #f0f0ee' }}>
+      {/* Header: label + visibility toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid #f0f0ee' }}>
         <p style={{ fontSize: 13, fontWeight: 700, margin: 0, fontFamily: 'Barlow,sans-serif' }}>{selected.label}</p>
         <button onClick={() => onUpdate(selected.id, { visible: !selected.visible })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: selected.visible ? '#0d0d0d' : '#ccc' }}>
           {selected.visible ? <Eye size={16} /> : <EyeOff size={16} />}
         </button>
       </div>
 
+      {/* Position X/Y — same as desktop */}
+      <PropRow label="Position X (%)">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input type="range" min={0} max={92} value={selected.x} onChange={e => onUpdate(selected.id, { x: +e.target.value })} style={{ flex: 1 }} />
+          <input type="number" value={selected.x} onChange={e => onUpdate(selected.id, { x: +e.target.value })} style={{ width: 42, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 5px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+        </div>
+      </PropRow>
+      <PropRow label="Position Y (%)">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input type="range" min={0} max={92} value={selected.y} onChange={e => onUpdate(selected.id, { y: +e.target.value })} style={{ flex: 1 }} />
+          <input type="number" value={selected.y} onChange={e => onUpdate(selected.id, { y: +e.target.value })} style={{ width: 42, border: '1px solid #e8e8e5', borderRadius: 6, padding: '4px 5px', fontSize: 11, outline: 'none', textAlign: 'center' }} />
+        </div>
+      </PropRow>
+
       {selected.isImage ? (
         <>
           <PropRow label="Image">
             {selected.imageUrl ? (
               <div style={{ position: 'relative', marginBottom: 8 }}>
-                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 8 }} />
-                <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 11, lineHeight: 1 }}>×</button>
+                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>×</button>
               </div>
             ) : (
-              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e0e0de', borderRadius: 8, padding: '14px 12px', cursor: 'pointer', gap: 5, marginBottom: 8 }}>
-                <ImageIcon size={18} color="#ccc" />
+              <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e0e0de', borderRadius: 8, padding: '16px 12px', cursor: 'pointer', gap: 5, marginBottom: 8 }}>
+                <ImageIcon size={20} color="#ccc" />
                 <span style={{ fontSize: 10, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{uploading ? 'Uploading…' : 'Click to upload'}</span>
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => onUpload(e, selected.id)} disabled={uploading} />
               </label>
             )}
           </PropRow>
-          <PropRow label="Placeholder Color">
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input type="color" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 32, height: 32, border: '1px solid #e8e8e5', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
-              <input type="text" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
+          <PropRow label="Width (% of page)">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={5} max={95} value={selected.width ?? 20} onChange={e => onUpdate(selected.id, { width: +e.target.value })} style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, width: 32, textAlign: 'right', color: '#666' }}>{selected.width ?? 20}%</span>
+            </div>
+          </PropRow>
+          <PropRow label="Height (% of canvas)">
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={5} max={100} value={selected.height ?? 30} onChange={e => onUpdate(selected.id, { height: +e.target.value })} style={{ flex: 1 }} />
+              <span style={{ fontSize: 11, width: 32, textAlign: 'right', color: '#666' }}>{selected.height ?? 30}%</span>
+            </div>
+          </PropRow>
+          <PropRow label={`Zoom: ${Math.round((selected.zoom ?? 1) * 100)}%`}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="range" min={50} max={200} step={1} value={Math.round((selected.zoom ?? 1) * 100)} onChange={e => onUpdate(selected.id, { zoom: +e.target.value / 100 })} style={{ flex: 1 }} />
+              <button onClick={() => onUpdate(selected.id, { zoom: 1 })} style={{ fontSize: 10, color: '#aaa', background: 'none', border: '1px solid #e8e8e5', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}>Reset</button>
             </div>
           </PropRow>
           <PropRow label="Image Focus">
@@ -1163,6 +1190,13 @@ function MobileElementPanel({
               {[['Top','top center'],['Center','center center'],['Bottom','bottom center'],['Left','center left'],['Right','center right'],['Top L','top left']].map(([lbl,val]) => (
                 <button key={val} onClick={() => onUpdate(selected.id, { objectPosition: val })} style={{ padding: '4px', fontSize: 9, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === val ? accentColor : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === val ? accentColor : '#666', fontFamily: 'Barlow,sans-serif' }}>{lbl}</button>
               ))}
+            </div>
+            <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+          </PropRow>
+          <PropRow label="Placeholder Color">
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="color" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ width: 32, height: 32, border: '1px solid #e8e8e5', borderRadius: 6, cursor: 'pointer', padding: 2 }} />
+              <input type="text" value={selected.color ?? '#dddddd'} onChange={e => onUpdate(selected.id, { color: e.target.value })} style={{ flex: 1, border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'monospace', outline: 'none' }} />
             </div>
           </PropRow>
         </>
@@ -1189,6 +1223,11 @@ function MobileElementPanel({
           </PropRow>
         </>
       )}
+
+      {/* Reset position — same as desktop */}
+      <button onClick={() => onResetPos(selected.id)} style={{ width: '100%', padding: '8px', borderRadius: 8, border: '1px solid #e8e8e5', background: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'Barlow,sans-serif', color: '#666', marginTop: 10 }}>
+        ↺ Reset Position
+      </button>
     </>
   )
 }
@@ -1328,7 +1367,11 @@ function MobilePageEditor({
             accentColor={cfg.accentColor}
             onUpdate={onUpdateEl}
             onUpload={onUpload}
-            onResetPos={() => {}}
+            onResetPos={(id) => {
+              const mobileDefaults = buildDeviceDefaults('mobile')
+              const d = mobileDefaults[activePage]?.elements.find((x: any) => x.id === id)
+              if (d) onUpdateEl(id, { x: d.x, y: d.y })
+            }}
           />
         </div>
       </div>
