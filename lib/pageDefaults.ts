@@ -22,6 +22,7 @@ export const HERO_DEFAULTS = [
 export const FEATURED_DEFAULTS = [
   { id: 'headline',     label: 'Headline',          visible: true, x: 2,  y: 4,  fontSize: 82,  color: '#0d0d0d', content: 'All - about\nmoments ©26' },
   { id: 'star',         label: 'Orange Star ✦',     visible: true, x: 3,  y: 50, fontSize: 32,  color: '#f04e0f', content: '✦' },
+  { id: 'custom_text',  label: 'Body Text',         visible: true, x: 2,  y: 62, fontSize: 13,  color: '#555555', content: 'Crafted for the bold.\nWorn by the few.' },
   { id: 'learn_more',   label: 'Learn More Button', visible: true, x: 2,  y: 82, fontSize: 10,  color: '#0d0d0d', content: 'LEARN MORE' },
   { id: 'main_image',   label: 'Main Image',        visible: true, x: 29, y: 2,  width: 36, height: 75, isImage: true, color: '#c8b890', imageUrl: '', fontSize: 14 },
   { id: 'caption1',     label: 'Caption 1',         visible: true, x: 29, y: 79, fontSize: 11,  color: '#aaaaaa', content: '©International - going distance 2026' },
