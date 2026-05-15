@@ -124,16 +124,26 @@ export default function HeroSection({ settings }: Props) {
       )
     }
 
-    // ── MOBILE: Premium layout mirroring desktop structure ──
-    // Three zones stacked: [tag+headline] → [full-width hero image] → [description+cta+stat]
+    // ── MOBILE: Premium layout — parallax + fadeIn + exitStyle ──
+    // Hero is at top so scrollY drives all effects directly (no sectionProgress needed)
+    const mobileParallax = (scrollY * 0.15).toFixed(1)
+    // fadeIn for text zones based on how far scrollY is (they start visible, exit on scroll)
+    const mobileExitStyle = scrollExitStyle(scrollY, txCfg)
+    // Simple fade-in on load (starts at 0, completes quickly)
+    const textFadeIn: React.CSSProperties = {
+      opacity: Math.min(1, scrollY === 0 ? 1 : 1),
+      transform: `translateY(0px)`,
+      transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1)',
+    }
+
     return (
       <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd', minHeight: '100svh' }}>
         {/* Guide lines (decorative, like desktop) */}
         <div style={{ position: 'absolute', left: '33%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.04)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', left: '67%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.04)', pointerEvents: 'none' }} />
 
-        {/* Zone 1 — top text (tag + headline, left-aligned like desktop col 1) */}
-        <div style={{ position: 'relative', zIndex: 10, padding: `68px ${padX} 0` }}>
+        {/* Zone 1 — top text — exit style on scroll */}
+        <div style={{ ...mobileExitStyle, position: 'relative', zIndex: 10, padding: `68px ${padX} 0` }}>
           {vis('tag_left') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
@@ -150,11 +160,14 @@ export default function HeroSection({ settings }: Props) {
           )}
         </div>
 
-        {/* Zone 2 — full-width hero image (like desktop centre column, but full width on mobile) */}
+        {/* Zone 2 — full-width hero image — parallax (image does NOT get exitStyle) */}
         <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de') }}>
-          {heroImageUrl ? (
-            <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
-          ) : null}
+          {/* Parallax inner wrapper */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+            {heroImageUrl ? (
+              <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
+            ) : null}
+          </div>
           {/* Stat — overlaid bottom-right like desktop */}
           {vis('stat') && (
             <div style={{ position: 'absolute', right: padX, bottom: 14, textAlign: 'right', zIndex: 2 }}>
@@ -184,8 +197,8 @@ export default function HeroSection({ settings }: Props) {
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: `linear-gradient(to bottom,transparent,${merged.bgColor})`, pointerEvents: 'none', zIndex: 1 }} />
         </div>
 
-        {/* Zone 3 — description + cta (like desktop col 1 bottom) */}
-        <div style={{ position: 'relative', zIndex: 10, padding: `20px ${padX} 52px` }}>
+        {/* Zone 3 — description + cta — exit style on scroll */}
+        <div style={{ ...mobileExitStyle, position: 'relative', zIndex: 10, padding: `20px ${padX} 52px` }}>
           {vis('description') && (
             <p style={{ fontSize: 13, lineHeight: 1.8, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', maxWidth: 340, margin: '0 0 24px' }}>
               {description}

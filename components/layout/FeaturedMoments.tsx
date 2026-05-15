@@ -145,35 +145,51 @@ export default function FeaturedMoments({ products, settings }: Props) {
       )
     }
 
-    // ── MOBILE: Premium layout — desktop 3-col collapsed into vertical flow ──
-    // Structure: headline → main image (S-shape) → caption+price → description row (desc+thumb) → divider → product2 → caption2+price2 → CTA
+    // ── MOBILE: Premium layout with fadeIn + parallax + exitStyle ──
+    const mParallax1 = (scrollY * 0.14).toFixed(1)
+    const mParallax2 = (scrollY * 0.10).toFixed(1)
+    const mParallax3 = (scrollY * 0.18).toFixed(1)
+
     return (
       <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden', borderTop: '1px solid #e8e8e5', padding: '52px 20px 64px' }}>
-        {/* S watermark — scaled for mobile */}
+        {/* S watermark */}
         <div style={{ position: 'absolute', left: '10%', top: '-6%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'min(88vw,340px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
 
         <div style={{ position: 'relative' }}>
-          {/* Headline — desktop col1 scale */}
+          {/* Headline — fadeIn on scroll-in, exitStyle on scroll-out */}
           {vis(cfg, 'headline') && (
-            <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(54px,16vw,80px)', lineHeight: 0.91, letterSpacing: '-0.5px', color: clr(cfg,'headline','#0d0d0d'), margin: '0 0 18px', whiteSpace: 'pre-line' }}>
-              {txt(cfg, 'headline', 'All - about\nmoments ©26')}
-            </h2>
+            <div style={{ ...fadeIn(progress, 0.0, 0.3), ...exitStyle }}>
+              <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(54px,16vw,80px)', lineHeight: 0.91, letterSpacing: '-0.5px', color: clr(cfg,'headline','#0d0d0d'), margin: '0 0 18px', whiteSpace: 'pre-line' }}>
+                {txt(cfg, 'headline', 'All - about\nmoments ©26')}
+              </h2>
+            </div>
           )}
 
-          {/* Main image — S-shape, full width, desktop clippath */}
+          {/* custom_text — body text */}
+          {vis(cfg, 'custom_text') && (
+            <div style={{ ...fadeIn(progress, 0.01, 0.28), ...exitStyle, marginBottom: 16 }}>
+              <p style={{ fontSize: fsize(cfg,'custom_text',13), lineHeight: 1.75, color: clr(cfg,'custom_text','#555'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
+                {txt(cfg, 'custom_text', 'Crafted for the bold.\nWorn by the few.')}
+              </p>
+            </div>
+          )}
+
+          {/* Main image — S-shape parallax (no exitStyle on images) */}
           {vis(cfg, 'main_image') && (
             <div
               onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)}
-              style={{ position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ ...fadeIn(progress, 0.02, 0.35), position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${mParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+              </div>
               {/* White stripe at ~69% like desktop */}
               <div style={{ position: 'absolute', top: '69%', left: 0, right: 0, height: 6, background: cfg.bgColor, zIndex: 3 }} />
             </div>
           )}
 
-          {/* Caption + price row (desktop col2 bottom) */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
+          {/* Caption + price row — fadeIn + exitStyle on text */}
+          <div style={{ ...fadeIn(progress, 0.08, 0.38), ...exitStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
             {vis(cfg, 'caption1') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption1','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}
@@ -186,8 +202,8 @@ export default function FeaturedMoments({ products, settings }: Props) {
             )}
           </div>
 
-          {/* Description + thumb row (desktop col3 top) */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 22 }}>
+          {/* Description + thumb row — fadeIn + exitStyle */}
+          <div style={{ ...fadeIn(progress, 0.10, 0.42), ...exitStyle, display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 22 }}>
             {vis(cfg, 'star') && (
               <div className="animate-spin-slow" style={{ color: clr(cfg,'star',cfg.accentColor), fontSize: 26, lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>
                 {txt(cfg,'star','✦')}
@@ -200,7 +216,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
             )}
             {vis(cfg, 'thumb_image') && (
               <div style={{ position: 'relative', width: 72, aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), flexShrink: 0, clipPath: imageShape }}>
-                {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '140%', transform: `translateY(${mParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                </div>
               </div>
             )}
           </div>
@@ -208,19 +226,21 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {/* Divider like desktop */}
           <div style={{ height: 1, background: '#e0e0dd', margin: '8px 0 20px' }} />
 
-          {/* Product 2 image — desktop col3 polygon */}
+          {/* Product 2 image — parallax (no exitStyle) */}
           {vis(cfg, 'product2_img') && (
             <div
               onClick={() => p3?.slug && router.push(`/product/${p3.slug}`)}
-              style={{ position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: clr(cfg,'product2_img','#5a5050'), cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ ...fadeIn(progress, 0.15, 0.48), position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: clr(cfg,'product2_img','#5a5050'), cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '150%', transform: `translateY(${mParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
+              </div>
             </div>
           )}
 
-          {/* Caption2 + price2 row */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
+          {/* Caption2 + price2 row — exitStyle */}
+          <div style={{ ...fadeIn(progress, 0.18, 0.52), ...exitStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
             {vis(cfg, 'caption2') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption2','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption2', `©${p3?.name ?? 'International'} - just do it 2026`)}
@@ -233,9 +253,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
             )}
           </div>
 
-          {/* CTA — desktop style pill button */}
+          {/* CTA — exitStyle */}
           {vis(cfg, 'learn_more') && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ ...fadeIn(progress, 0.22, 0.56), ...exitStyle, display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.accentColor }} />
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ddddd9' }} />

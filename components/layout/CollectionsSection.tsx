@@ -109,25 +109,22 @@ export default function CollectionsSection({ products, settings }: Props) {
       )
     }
 
-    // ── MOBILE: Premium layout — mirrors desktop left/right columns ──
-    // Left column: intro text + S-shape model image + caption
-    // Right column: featured card + collection rows
-    // Stacked vertically for mobile
+    // ── MOBILE: Premium layout with fadeIn + parallax + exitStyle ──
     return (
       <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '52px 0 68px' }}>
 
-        {/* Intro text — like desktop centered above left col */}
+        {/* Intro text — fadeIn + exitStyle */}
         {vis(cfg,'intro') && (
-          <div style={{ padding: '0 20px', marginBottom: 24 }}>
+          <div style={{ ...fadeIn(progress, 0.0, 0.3), ...exitStyle, padding: '0 20px', marginBottom: 24 }}>
             <p style={{ fontSize: 13, lineHeight: 1.8, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, maxWidth: 300, textAlign: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
               {txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}
             </p>
           </div>
         )}
 
-        {/* S-shape model image — exact desktop geometry, full width mobile */}
+        {/* S-shape model image — parallax (no exitStyle on images) */}
         {vis(cfg,'model_image') && (
-          <div style={{ position: 'relative', marginBottom: 16 }}>
+          <div style={{ ...fadeIn(progress, 0.04, 0.38), position: 'relative', marginBottom: 16 }}>
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', margin: '0 20px' }}>
               <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
               <div style={{ position: 'relative', zIndex: 2, height: 'min(80vw,340px)', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
@@ -142,15 +139,15 @@ export default function CollectionsSection({ products, settings }: Props) {
               </div>
             </div>
             {vis(cfg,'caption') && (
-              <p style={{ margin: '12px 20px 0', fontSize: 11, color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
+              <p style={{ ...exitStyle, margin: '12px 20px 0', fontSize: 11, color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
                 {txt(cfg,'caption','Being Part Of Our Journey.')}
               </p>
             )}
           </div>
         )}
 
-        {/* Featured card — desktop right col top */}
-        <div style={{ padding: '0 20px', paddingBottom: 24, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
+        {/* Featured card — fadeIn + exitStyle */}
+        <div style={{ ...fadeIn(progress, 0.1, 0.44), ...exitStyle, padding: '0 20px', paddingBottom: 24, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 88px', gap: 16, alignItems: 'start' }}>
             <div>
               <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(36px,12vw,54px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 10px', letterSpacing: '-0.2px' }}>
@@ -173,8 +170,8 @@ export default function CollectionsSection({ products, settings }: Props) {
           </div>
         </div>
 
-        {/* Collection rows — desktop right col bottom */}
-        <div style={{ padding: '0 20px' }}>
+        {/* Collection rows — fadeIn + exitStyle */}
+        <div style={{ ...fadeIn(progress, 0.18, 0.52), ...exitStyle, padding: '0 20px' }}>
           {collectionRows.map((row, i) => (
             vis(cfg, row.id) ? (
               <Link key={i} href="/shop"
