@@ -14,7 +14,12 @@ function getViewportKind(width: number): ViewportKind {
 }
 
 export function useViewportKind(): ViewportKind {
-  const [kind, setKind] = useState<ViewportKind>('desktop')
+  // Lazy-init: read window.innerWidth immediately if available (client-side)
+  // This prevents the flash where mobile users briefly see desktop layout
+  const [kind, setKind] = useState<ViewportKind>(() => {
+    if (typeof window !== 'undefined') return getViewportKind(window.innerWidth)
+    return 'desktop'
+  })
 
   useEffect(() => {
     const update = () => setKind(getViewportKind(window.innerWidth))
