@@ -800,6 +800,36 @@ const ARROW_CUT = 'polygon(100% 0%,100% 100%,0% 100%,40% 75%,0% 50%,40% 25%,0% 0
 const FEAT_POLY = 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)'
 
 // Phone shell wrapper (260px wide screen inside)
+// Wraps a preview element — clicking selects it in the right panel
+function ElWrap({ id, selectedId, onSelect, children, style }: {
+  id: string; selectedId?: string | null; onSelect?: (id: string) => void
+  children: React.ReactNode; style?: React.CSSProperties
+}) {
+  const isSelected = selectedId === id
+  return (
+    <div
+      onClick={e => { e.stopPropagation(); onSelect?.(id) }}
+      style={{
+        ...style,
+        outline: isSelected ? '2px solid #f04e0f' : '2px solid transparent',
+        outlineOffset: 1,
+        borderRadius: 3,
+        cursor: 'pointer',
+        transition: 'outline 0.1s',
+        position: 'relative',
+      }}
+      title={id}
+    >
+      {children}
+      {isSelected && (
+        <div style={{ position: 'absolute', top: -16, left: 0, background: '#f04e0f', color: '#fff', fontSize: 7, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap', zIndex: 50, pointerEvents: 'none', fontFamily: 'Barlow,sans-serif', letterSpacing: '0.5px' }}>
+          {id}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PhoneShell({ children, bgColor }: { children: React.ReactNode; bgColor: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -847,7 +877,7 @@ function ImgBox({ src, color, h, clip, label }: { src?: string; color: string; h
 
 // ── Per-section preview renderers ──
 
-function MobileHeroPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+function MobileHeroPreview({ cfg, accentColor, selectedId, onSelect }: { cfg: PageConfig; accentColor: string; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
   const imgEl = el('model_image') as any
@@ -857,80 +887,73 @@ function MobileHeroPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor:
   return (
     <PhoneShell bgColor={bgColor}>
       <div style={{ padding: '10px 12px 0' }}>
-        {/* Tag */}
-        {v('tag_left') && <p style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('tag_left')?.content ?? '//FASHION · SS 2026'}</p>}
-        {/* Headline */}
+        {v('tag_left') && <ElWrap id="tag_left" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('tag_left')?.content ?? '//FASHION · SS 2026'}</p></ElWrap>}
         {(v('headline_left') || v('headline_right')) && (
-          <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 36, lineHeight: 0.88, textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', margin: '0 0 10px' }}>
-            {`${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`}
-          </h2>
+          <ElWrap id="headline_left" selectedId={selectedId} onSelect={onSelect}>
+            <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 36, lineHeight: 0.88, textTransform: 'lowercase', color: el('headline_left')?.color ?? '#0d0d0d', whiteSpace: 'pre-line', margin: '0 0 10px' }}>
+              {`${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`}
+            </h2>
+          </ElWrap>
         )}
       </div>
-      {/* Full-width hero image */}
-      <div style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: imgEl?.color ?? '#e2e2de', flexShrink: 0 }}>
-        {imgSrc ? <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgEl?.objectPosition ?? 'top center' }} /> : null}
-        {/* Overlays: stat, star, tag_right */}
-        {v('stat') && <div style={{ position: 'absolute', right: 10, bottom: 8 }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 28, lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>{el('stat')?.content ?? '280K'}</p>{v('stat_label') && <p style={{ margin: '3px 0 0', fontSize: 6, letterSpacing: '2px', textTransform: 'uppercase', color: el('stat_label')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', textAlign: 'right' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
-        {v('orange_star') && <div style={{ position: 'absolute', left: 10, bottom: '18%', color: el('orange_star')?.color ?? accentColor, fontSize: 18, lineHeight: 1 }}>✦</div>}
-        {v('tag_right') && <p style={{ position: 'absolute', right: 10, top: 6, fontSize: 9, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, maxWidth: 60, textAlign: 'right' }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
+      <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: imgEl?.color ?? '#e2e2de', flexShrink: 0 }}>
+        {imgSrc ? <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgEl?.objectPosition ?? 'top center', pointerEvents: 'none' }} /> : null}
+        {v('stat') && <ElWrap id="stat" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', right: 10, bottom: 8 }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 28, lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>{el('stat')?.content ?? '280K'}</p>{v('stat_label') && <p style={{ margin: '3px 0 0', fontSize: 6, letterSpacing: '2px', textTransform: 'uppercase', color: el('stat_label')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', textAlign: 'right' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</ElWrap>}
+        {v('orange_star') && <ElWrap id="orange_star" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', left: 10, bottom: '18%', color: el('orange_star')?.color ?? accentColor, fontSize: 18, lineHeight: 1 }}>✦</ElWrap>}
+        {v('tag_right') && <ElWrap id="tag_right" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', right: 10, top: 6 }}><p style={{ fontSize: 9, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, maxWidth: 60, textAlign: 'right' }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p></ElWrap>}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 32, background: `linear-gradient(to bottom,transparent,${bgColor})`, pointerEvents: 'none' }} />
-      </div>
+      </ElWrap>
       <div style={{ padding: '8px 12px 16px' }}>
-        {v('description') && <p style={{ fontSize: 9, lineHeight: 1.8, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px' }}>{el('description')?.content ?? ''}</p>}
-        {v('new_drop') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '5px 12px' }}><span style={{ fontSize: 7, fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>Shop Now →</span></div>}
+        {v('description') && <ElWrap id="description" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 9, lineHeight: 1.8, color: el('description')?.color ?? '#555', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px' }}>{el('description')?.content ?? ''}</p></ElWrap>}
+        {v('new_drop') && <ElWrap id="new_drop" selectedId={selectedId} onSelect={onSelect} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '5px 12px' }}><span style={{ fontSize: 7, fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>Shop Now →</span></ElWrap>}
       </div>
     </PhoneShell>
   )
 }
 
-function MobileFeaturedPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+function MobileFeaturedPreview({ cfg, accentColor, selectedId, onSelect }: { cfg: PageConfig; accentColor: string; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
 
   return (
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '10px 12px 16px', position: 'relative', overflow: 'hidden' }}>
-        {/* S watermark */}
         <div style={{ position: 'absolute', left: '10%', top: '-4%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 160, lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
-        {/* Headline */}
-        {v('headline') && <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 0.91, color: el('headline')?.color ?? '#0d0d0d', margin: '0 0 8px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? 'All - about\nmoments ©26'}</h2>}
-        {/* Main image S-shape */}
-        {v('main_image') && <div style={{ width: '100%', height: 130, overflow: 'hidden', clipPath: S_SHAPE, background: el('main_image')?.color ?? '#c8b890', marginBottom: 6, position: 'relative' }}>
-          {el('main_image')?.imageUrl ? <img src={(el('main_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
+        {v('headline') && <ElWrap id="headline" selectedId={selectedId} onSelect={onSelect}><h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 0.91, color: el('headline')?.color ?? '#0d0d0d', margin: '0 0 8px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? 'All - about
+moments ©26'}</h2></ElWrap>}
+        {v('main_image') && <ElWrap id="main_image" selectedId={selectedId} onSelect={onSelect} style={{ width: '100%', height: 130, overflow: 'hidden', clipPath: S_SHAPE, background: el('main_image')?.color ?? '#c8b890', marginBottom: 6, position: 'relative' }}>
+          {el('main_image')?.imageUrl ? <img src={(el('main_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
           <div style={{ position: 'absolute', top: '69%', left: 0, right: 0, height: 4, background: cfg.bgColor, zIndex: 3 }} />
-        </div>}
-        {/* Caption + price row */}
+        </ElWrap>}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 8 }}>
-          {v('caption1') && <p style={{ fontSize: 7, color: el('caption1')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, flex: 1, paddingRight: 8, fontFamily: 'Barlow,sans-serif' }}>{el('caption1')?.content ?? ''}</p>}
-          {v('price1') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price1')?.color ?? '#0d0d0d', flexShrink: 0 }}>{el('price1')?.content ?? '($120)'}</p>}
+          {v('caption1') && <ElWrap id="caption1" selectedId={selectedId} onSelect={onSelect} style={{ flex: 1, paddingRight: 8 }}><p style={{ fontSize: 7, color: el('caption1')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, fontFamily: 'Barlow,sans-serif' }}>{el('caption1')?.content ?? ''}</p></ElWrap>}
+          {v('price1') && <ElWrap id="price1" selectedId={selectedId} onSelect={onSelect}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price1')?.color ?? '#0d0d0d' }}>{el('price1')?.content ?? '($120)'}</p></ElWrap>}
         </div>
-        {/* Desc + star + thumb row */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
-          {v('star') && <span style={{ color: el('star')?.color ?? accentColor, fontSize: 13, flexShrink: 0, paddingTop: 1 }}>✦</span>}
-          {v('description') && <p style={{ flex: 1, fontSize: 8, lineHeight: 1.7, color: el('description')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: 0 }}>{el('description')?.content ?? ''}</p>}
-          {v('thumb_image') && <div style={{ width: 38, height: 46, overflow: 'hidden', background: el('thumb_image')?.color ?? '#c8c0b8', flexShrink: 0, clipPath: S_SHAPE }}>
-            {el('thumb_image')?.imageUrl ? <img src={(el('thumb_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
-          </div>}
+          {v('star') && <ElWrap id="star" selectedId={selectedId} onSelect={onSelect}><span style={{ color: el('star')?.color ?? accentColor, fontSize: 13, display: 'block', paddingTop: 1 }}>✦</span></ElWrap>}
+          {v('description') && <ElWrap id="description" selectedId={selectedId} onSelect={onSelect} style={{ flex: 1 }}><p style={{ fontSize: 8, lineHeight: 1.7, color: el('description')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: 0 }}>{el('description')?.content ?? ''}</p></ElWrap>}
+          {v('thumb_image') && <ElWrap id="thumb_image" selectedId={selectedId} onSelect={onSelect} style={{ width: 38, height: 46, overflow: 'hidden', background: el('thumb_image')?.color ?? '#c8c0b8', flexShrink: 0, clipPath: S_SHAPE }}>
+            {el('thumb_image')?.imageUrl ? <img src={(el('thumb_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
+          </ElWrap>}
         </div>
         <div style={{ height: 1, background: '#e0e0dd', margin: '6px 0 8px' }} />
-        {/* Product 2 */}
-        {v('product2_img') && <div style={{ width: '76%', height: 80, overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: el('product2_img')?.color ?? '#5a5050', marginBottom: 6, position: 'relative' }}>
-          {el('product2_img')?.imageUrl ? <img src={(el('product2_img') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
-        </div>}
+        {v('product2_img') && <ElWrap id="product2_img" selectedId={selectedId} onSelect={onSelect} style={{ width: '76%', height: 80, overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: el('product2_img')?.color ?? '#5a5050', marginBottom: 6, position: 'relative' }}>
+          {el('product2_img')?.imageUrl ? <img src={(el('product2_img') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
+        </ElWrap>}
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 }}>
-          {v('caption2') && <p style={{ fontSize: 7, color: el('caption2')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, flex: 1, paddingRight: 8, fontFamily: 'Barlow,sans-serif' }}>{el('caption2')?.content ?? ''}</p>}
-          {v('price2') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price2')?.color ?? '#0d0d0d', flexShrink: 0 }}>{el('price2')?.content ?? '(45%)'}</p>}
+          {v('caption2') && <ElWrap id="caption2" selectedId={selectedId} onSelect={onSelect} style={{ flex: 1, paddingRight: 8 }}><p style={{ fontSize: 7, color: el('caption2')?.color ?? '#aaa', fontStyle: 'italic', margin: 0, fontFamily: 'Barlow,sans-serif' }}>{el('caption2')?.content ?? ''}</p></ElWrap>}
+          {v('price2') && <ElWrap id="price2" selectedId={selectedId} onSelect={onSelect}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: 0, color: el('price2')?.color ?? '#0d0d0d' }}>{el('price2')?.content ?? '(45%)'}</p></ElWrap>}
         </div>
-        {v('learn_more') && <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        {v('learn_more') && <ElWrap id="learn_more" selectedId={selectedId} onSelect={onSelect} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', gap: 4 }}><div style={{ width: 5, height: 5, borderRadius: '50%', background: accentColor }} /><div style={{ width: 5, height: 5, borderRadius: '50%', background: '#ddd' }} /></div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '4px 10px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('learn_more')?.content ?? 'LEARN MORE'} →</span></div>
-        </div>}
+        </ElWrap>}
       </div>
     </PhoneShell>
   )
 }
 
-function MobileCategoriesPreview({ cfg, categoryItems }: { cfg: PageConfig; categoryItems: CategoryItem[] }) {
+function MobileCategoriesPreview({ cfg, categoryItems, selectedId, onSelect }: { cfg: PageConfig; categoryItems: CategoryItem[]; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
   const modelImgSrc = el('model_image')?.imageUrl ?? ''
@@ -941,24 +964,18 @@ function MobileCategoriesPreview({ cfg, categoryItems }: { cfg: PageConfig; cate
   return (
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '8px 0 16px', position: 'relative', overflow: 'hidden' }}>
-        {/* C watermark */}
         <div style={{ position: 'absolute', right: '-8%', top: '-2%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 160, lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>C</div>
-        {/* Label row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', marginBottom: 10 }}>
-          <span style={{ fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif', flexShrink: 0 }}>{el('label')?.content ?? '[CATEGORIES]'}</span>
+          <ElWrap id="label" selectedId={selectedId} onSelect={onSelect}><span style={{ fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('label')?.content ?? '[CATEGORIES]'}</span></ElWrap>
           <div style={{ flex: 1, maxWidth: 60, borderTop: '1px dashed #ccc' }} />
         </div>
-        {/* 42/58 split: image left, list right */}
         <div style={{ display: 'grid', gridTemplateColumns: '42fr 58fr', gap: 0, alignItems: 'start' }}>
-          {/* Left: image with arrow cutout */}
-          <div style={{ position: 'relative', height: 130, overflow: 'hidden', background: el('model_image')?.color ?? '#e2e0dc' }}>
+          <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ position: 'relative', height: 130, overflow: 'hidden', background: el('model_image')?.color ?? '#e2e0dc' }}>
             {activeImg
-              ? <img key={activeImg} src={activeImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', transition: 'opacity 0.3s' }} />
+              ? <img key={activeImg} src={activeImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', transition: 'opacity 0.3s', pointerEvents: 'none' }} />
               : <div style={{ width: '100%', height: '100%', background: el('model_image')?.color ?? '#e2e0dc' }} />}
-            {/* Arrow cutout */}
-            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '28%', background: cfg.bgColor, clipPath: ARROW_CUT, zIndex: 2 }} />
-          </div>
-          {/* Right: category list */}
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '28%', background: cfg.bgColor, clipPath: ARROW_CUT, zIndex: 2, pointerEvents: 'none' }} />
+          </ElWrap>
           <div style={{ paddingRight: 12, paddingTop: 2 }}>
             {visibleCats.map((cat, i) => (
               <div key={cat.id} onClick={() => setActiveCat(i)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e8e8e5', padding: `${i === activeCat ? 4 : 2}px 0`, cursor: 'pointer' }}>
@@ -969,17 +986,16 @@ function MobileCategoriesPreview({ cfg, categoryItems }: { cfg: PageConfig; cate
             ))}
           </div>
         </div>
-        {/* Description + SEE PRODUCT below */}
         <div style={{ padding: '10px 12px 0' }}>
-          {v('description') && <p style={{ fontSize: 8, lineHeight: 1.8, color: el('description')?.color ?? '#666', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('description')?.content ?? ''}</p>}
-          {v('see_product') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1.5px solid ${el('see_product')?.color ?? '#0d0d0d'}`, borderRadius: 20, padding: '4px 10px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('see_product')?.color ?? '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('see_product')?.content ?? 'SEE PRODUCT'} →</span></div>}
+          {v('description') && <ElWrap id="description" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 8, lineHeight: 1.8, color: el('description')?.color ?? '#666', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('description')?.content ?? ''}</p></ElWrap>}
+          {v('see_product') && <ElWrap id="see_product" selectedId={selectedId} onSelect={onSelect} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: `1.5px solid ${el('see_product')?.color ?? '#0d0d0d'}`, borderRadius: 20, padding: '4px 10px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: el('see_product')?.color ?? '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('see_product')?.content ?? 'SEE PRODUCT'} →</span></ElWrap>}
         </div>
       </div>
     </PhoneShell>
   )
 }
 
-function MobileCarouselPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+function MobileCarouselPreview({ cfg, accentColor, selectedId, onSelect }: { cfg: PageConfig; accentColor: string; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
   const cardIds = ['card1','card2','card3','card4','card5','card6']
@@ -988,13 +1004,12 @@ function MobileCarouselPreview({ cfg, accentColor }: { cfg: PageConfig; accentCo
   return (
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '10px 0 14px' }}>
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '0 12px', marginBottom: 14 }}>
           <div>
-            {v('title') && <p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: el('title')?.color ?? '#0d0d0d', margin: '0 0 2px' }}>{el('title')?.content ?? 'SHOP THE COLLECTIONS'}</p>}
+            {v('title') && <ElWrap id="title" selectedId={selectedId} onSelect={onSelect}><p style={{ fontFamily: 'Barlow,sans-serif', fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: el('title')?.color ?? '#0d0d0d', margin: '0 0 2px' }}>{el('title')?.content ?? 'SHOP THE COLLECTIONS'}</p></ElWrap>}
             <div style={{ display: 'flex', gap: 6 }}>
-              {v('year') && <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('year')?.content ?? '2026'}</span>}
-              {v('other') && <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('other')?.content ?? '[Other]'}</span>}
+              {v('year') && <ElWrap id="year" selectedId={selectedId} onSelect={onSelect}><span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('year')?.content ?? '2026'}</span></ElWrap>}
+              {v('other') && <ElWrap id="other" selectedId={selectedId} onSelect={onSelect}><span style={{ fontSize: 9, color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('other')?.content ?? '[Other]'}</span></ElWrap>}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 5 }}>
@@ -1013,11 +1028,11 @@ function MobileCarouselPreview({ cfg, accentColor }: { cfg: PageConfig; accentCo
             const src = cardEl?.imageUrl ?? ''
             const dist = Math.abs(i - activeCard)
             return (
-              <div key={cardId} onClick={() => setActiveCard(i)} style={{ flexShrink: 0, width: w, height: h, overflow: 'hidden', background: bg, clipPath: CLIP_PATH, cursor: 'pointer', transform: `translateY(${isActive ? -14 : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.9 : 0.6, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)', position: 'relative' }}>
-                {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : <div style={{ width: '100%', height: '100%', background: bg }} />}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))' }} />
-                {isActive && v('wear') && <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center' }}><span style={{ fontSize: 6, color: el('wear')?.color ?? 'rgba(255,255,255,0.9)', fontFamily: 'Barlow,sans-serif' }}>{el('wear')?.content ?? '[Wear the Moment]'}</span></div>}
-              </div>
+              <ElWrap key={cardId} id={cardId} selectedId={selectedId} onSelect={onSelect} style={{ flexShrink: 0, width: w, height: h, overflow: 'hidden', background: bg, clipPath: CLIP_PATH, cursor: 'pointer', transform: `translateY(${isActive ? -14 : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.9 : 0.6, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)', position: 'relative' }} onClick={() => setActiveCard(i)}>
+                {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : <div style={{ width: '100%', height: '100%', background: bg }} />}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
+                {isActive && v('wear') && <ElWrap id="wear" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center' }}><span style={{ fontSize: 6, color: el('wear')?.color ?? 'rgba(255,255,255,0.9)', fontFamily: 'Barlow,sans-serif' }}>{el('wear')?.content ?? '[Wear the Moment]'}</span></ElWrap>}
+              </ElWrap>
             )
           })}
         </div>
@@ -1030,7 +1045,7 @@ function MobileCarouselPreview({ cfg, accentColor }: { cfg: PageConfig; accentCo
   )
 }
 
-function MobileCollectionsPreview({ cfg, accentColor }: { cfg: PageConfig; accentColor: string }) {
+function MobileCollectionsPreview({ cfg, accentColor, selectedId, onSelect }: { cfg: PageConfig; accentColor: string; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
   const modelSrc = el('model_image')?.imageUrl ?? ''
@@ -1039,45 +1054,41 @@ function MobileCollectionsPreview({ cfg, accentColor }: { cfg: PageConfig; accen
   return (
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '10px 12px 16px' }}>
-        {/* Intro */}
-        {v('intro') && <p style={{ fontSize: 8, lineHeight: 1.8, color: el('intro')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px', textAlign: 'center' }}>{el('intro')?.content ?? ''}</p>}
-        {/* S-shape model image */}
+        {v('intro') && <ElWrap id="intro" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 8, lineHeight: 1.8, color: el('intro')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px', textAlign: 'center' }}>{el('intro')?.content ?? ''}</p></ElWrap>}
         {v('model_image') && (
-          <div style={{ marginBottom: 10 }}>
+          <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ marginBottom: 10 }}>
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', height: 120, overflow: 'hidden', background: el('model_image')?.color ?? '#d8d4cc' }}>
               <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
               <div style={{ position: 'relative', zIndex: 2, height: '100%' }}>
-                {modelSrc ? <img src={modelSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                {modelSrc ? <img src={modelSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', pointerEvents: 'none' }} /> : null}
                 <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 6, background: cfg.bgColor, zIndex: 3 }} />
               </div>
             </div>
-            {v('caption') && <p style={{ margin: '6px 0 0', fontSize: 7, color: el('caption')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>{el('caption')?.content ?? ''}</p>}
-          </div>
+            {v('caption') && <ElWrap id="caption" selectedId={selectedId} onSelect={onSelect}><p style={{ margin: '6px 0 0', fontSize: 7, color: el('caption')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>{el('caption')?.content ?? ''}</p></ElWrap>}
+          </ElWrap>
         )}
-        {/* Featured card */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 56px', gap: 10, alignItems: 'start', paddingBottom: 10, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
           <div>
-            {v('feat_title') && <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 18, lineHeight: 0.98, color: el('feat_title')?.color ?? '#0d0d0d', margin: '0 0 5px' }}>{el('feat_title')?.content ?? 'Statement Pieces 2025'}</h3>}
-            {v('feat_desc') && <p style={{ fontSize: 8, lineHeight: 1.7, color: el('feat_desc')?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('feat_desc')?.content ?? ''}</p>}
-            {v('feat_btn') && <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '3px 9px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('feat_btn')?.content ?? 'GET STARTED'} →</span></div>}
+            {v('feat_title') && <ElWrap id="feat_title" selectedId={selectedId} onSelect={onSelect}><h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 18, lineHeight: 0.98, color: el('feat_title')?.color ?? '#0d0d0d', margin: '0 0 5px' }}>{el('feat_title')?.content ?? 'Statement Pieces 2025'}</h3></ElWrap>}
+            {v('feat_desc') && <ElWrap id="feat_desc" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 8, lineHeight: 1.7, color: el('feat_desc')?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('feat_desc')?.content ?? ''}</p></ElWrap>}
+            {v('feat_btn') && <ElWrap id="feat_btn" selectedId={selectedId} onSelect={onSelect} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '3px 9px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('feat_btn')?.content ?? 'GET STARTED'} →</span></ElWrap>}
           </div>
-          <div style={{ width: 56, height: 56, overflow: 'hidden', background: el('featured_img')?.color ?? '#b8c8b8', clipPath: FEAT_POLY }}>
-            {featSrc ? <img src={featSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} /> : null}
-          </div>
+          <ElWrap id="featured_img" selectedId={selectedId} onSelect={onSelect} style={{ width: 56, height: 56, overflow: 'hidden', background: el('featured_img')?.color ?? '#b8c8b8', clipPath: FEAT_POLY }}>
+            {featSrc ? <img src={featSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
+          </ElWrap>
         </div>
-        {/* Collection rows */}
         {['col1','col2','col3'].map(id => v(id) ? (
-          <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e8e8e5' }}>
+          <ElWrap key={id} id={id} selectedId={selectedId} onSelect={onSelect} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e8e8e5' }}>
             <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 14, color: el(id)?.color ?? '#555' }}>{el(id)?.content ?? id}</span>
             <div style={{ width: 22, height: 22, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><span style={{ fontSize: 9, color: '#bbb' }}>→</span></div>
-          </div>
+          </ElWrap>
         ) : null)}
       </div>
     </PhoneShell>
   )
 }
 
-function MobileFooterPreview({ cfg }: { cfg: PageConfig }) {
+function MobileFooterPreview({ cfg, selectedId, onSelect }: { cfg: PageConfig; selectedId?: string | null; onSelect?: (id: string) => void }) {
   const el = (id: string) => cfg.elements.find(e => e.id === id)
   const v  = (id: string) => el(id)?.visible !== false
   const isFooter = true
@@ -1085,21 +1096,20 @@ function MobileFooterPreview({ cfg }: { cfg: PageConfig }) {
   return (
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '14px 12px 20px' }}>
-        {v('headline') && <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 20, lineHeight: 1.05, color: el('headline')?.color ?? '#fff', margin: '0 0 12px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? ''}</h2>}
-        {/* Email input mock */}
-        <div style={{ display: 'flex', gap: 0, marginBottom: 14, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, overflow: 'hidden' }}>
+        {v('headline') && <ElWrap id="headline" selectedId={selectedId} onSelect={onSelect}><h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 20, lineHeight: 1.05, color: el('headline')?.color ?? '#fff', margin: '0 0 12px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? ''}</h2></ElWrap>}
+        <ElWrap id="email_row" selectedId={selectedId} onSelect={onSelect} style={{ display: 'flex', gap: 0, marginBottom: 14, border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, overflow: 'hidden' }}>
           <div style={{ flex: 1, padding: '6px 8px', fontSize: 8, color: el('email_row')?.color ?? '#555', fontFamily: 'Barlow,sans-serif' }}>{el('email_row')?.content ?? 'Send email to us'}</div>
           <div style={{ background: '#f04e0f', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: '#fff' }}>→</span></div>
-        </div>
+        </ElWrap>
         <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 0 12px' }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {[['location','📍'],['email','✉'],['phone','📞'],['hours','🕐']].map(([id, icon]) => v(id) ? (
-            <div key={id}>
+            <ElWrap key={id} id={id} selectedId={selectedId} onSelect={onSelect}>
               <p style={{ fontSize: 7, color: el(id)?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{icon} {el(id)?.content ?? ''}</p>
-            </div>
+            </ElWrap>
           ) : null)}
         </div>
-        {v('copyright') && <p style={{ fontSize: 7, color: el('copyright')?.color ?? '#444', fontFamily: 'Barlow,sans-serif', margin: '14px 0 0', textAlign: 'center' }}>{el('copyright')?.content ?? ''}</p>}
+        {v('copyright') && <ElWrap id="copyright" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 7, color: el('copyright')?.color ?? '#444', fontFamily: 'Barlow,sans-serif', margin: '14px 0 0', textAlign: 'center' }}>{el('copyright')?.content ?? ''}</p></ElWrap>}
       </div>
     </PhoneShell>
   )
@@ -1254,15 +1264,16 @@ function MobilePageEditor({
   const cfg    = configs[activePage]
   const selEl  = cfg.elements.find(e => e.id === selectedEl)
 
-  // Section-specific preview
+  // Section-specific preview — passes onSelect so elements are clickable
   const renderPreview = () => {
+    const selectProps = { selectedId: selectedEl, onSelect: onSelectedEl }
     switch (activePage) {
-      case 'hero':             return <MobileHeroPreview cfg={cfg} accentColor={cfg.accentColor} />
-      case 'featured_moments': return <MobileFeaturedPreview cfg={cfg} accentColor={cfg.accentColor} />
-      case 'categories':       return <MobileCategoriesPreview cfg={cfg} categoryItems={categoryItems} />
-      case 'carousel':         return <MobileCarouselPreview cfg={cfg} accentColor={cfg.accentColor} />
-      case 'collections':      return <MobileCollectionsPreview cfg={cfg} accentColor={cfg.accentColor} />
-      case 'footer':           return <MobileFooterPreview cfg={cfg} />
+      case 'hero':             return <MobileHeroPreview cfg={cfg} accentColor={cfg.accentColor} {...selectProps} />
+      case 'featured_moments': return <MobileFeaturedPreview cfg={cfg} accentColor={cfg.accentColor} {...selectProps} />
+      case 'categories':       return <MobileCategoriesPreview cfg={cfg} categoryItems={categoryItems} {...selectProps} />
+      case 'carousel':         return <MobileCarouselPreview cfg={cfg} accentColor={cfg.accentColor} {...selectProps} />
+      case 'collections':      return <MobileCollectionsPreview cfg={cfg} accentColor={cfg.accentColor} {...selectProps} />
+      case 'footer':           return <MobileFooterPreview cfg={cfg} {...selectProps} />
       default:                 return null
     }
   }
