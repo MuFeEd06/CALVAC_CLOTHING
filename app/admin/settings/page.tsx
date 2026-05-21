@@ -919,8 +919,7 @@ function MobileFeaturedPreview({ cfg, accentColor, selectedId, onSelect }: { cfg
     <PhoneShell bgColor={cfg.bgColor}>
       <div style={{ padding: '10px 12px 16px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: '10%', top: '-4%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 160, lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
-        {v('headline') && <ElWrap id="headline" selectedId={selectedId} onSelect={onSelect}><h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 0.91, color: el('headline')?.color ?? '#0d0d0d', margin: '0 0 8px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? 'All - about
-moments ©26'}</h2></ElWrap>}
+        {v('headline') && <ElWrap id="headline" selectedId={selectedId} onSelect={onSelect}><h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 28, lineHeight: 0.91, color: el('headline')?.color ?? '#0d0d0d', margin: '0 0 8px', whiteSpace: 'pre-line' }}>{el('headline')?.content ?? 'All - about\nmoments ©26'}</h2></ElWrap>}
         {v('main_image') && <ElWrap id="main_image" selectedId={selectedId} onSelect={onSelect} style={{ width: '100%', height: 130, overflow: 'hidden', clipPath: S_SHAPE, background: el('main_image')?.color ?? '#c8b890', marginBottom: 6, position: 'relative' }}>
           {el('main_image')?.imageUrl ? <img src={(el('main_image') as any).imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
           <div style={{ position: 'absolute', top: '69%', left: 0, right: 0, height: 4, background: cfg.bgColor, zIndex: 3 }} />
