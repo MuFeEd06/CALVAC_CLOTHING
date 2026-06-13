@@ -11,10 +11,10 @@ export default async function AdminProductsPage() {
   ])
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-condensed font-900 text-4xl tracking-tight">Products</h1>
+          <h1 className="font-condensed font-900 text-3xl md:text-4xl tracking-tight">Products</h1>
           <p className="text-[var(--gray-mid)] text-sm mt-1">{products.length} total products</p>
         </div>
         <Link
@@ -42,8 +42,8 @@ export default async function AdminProductsPage() {
       </div>
 
       {/* Products table */}
-      <div className="bg-white rounded-2xl overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white rounded-2xl overflow-x-auto">
+        <table className="w-full min-w-[620px] md:min-w-0">
           <thead>
             <tr className="border-b border-[var(--gray-light)]">
               <th className="text-left px-6 py-4 text-xs font-600 tracking-widest uppercase text-[var(--gray-mid)]">Product</th>

@@ -3,22 +3,17 @@ import ProductGrid from '@/components/shop/ProductGrid'
 import ShopFilters from '@/components/shop/ShopFilters'
 import MobileShopControls from '@/components/shop/MobileShopControls'
 import Navbar from '@/components/layout/Navbar'
+import { filterProductsByCollection, findCollectionBySlug, getCollectionItems } from '@/lib/collections'
 import type { Product, Category } from '@/types'
 
 interface PageProps {
-  searchParams: { category?: string; sort?: string }
+  searchParams: { category?: string; collection?: string; sort?: string }
 }
-
-const COLLECTION_ROWS = [
-  { id: 'col1', label: 'Everyday Essentials 2026', href: '/shop' },
-  { id: 'col2', label: 'Timeless Classics 2026',   href: '/shop' },
-  { id: 'col3', label: 'Seasonal Collections 2025', href: '/shop' },
-]
 
 export default async function ShopPage({ searchParams }: PageProps) {
   const [allProducts, categories, settings] = await Promise.all([
-    getProducts({ active: true }),
-    getCategories(),
+    getProducts({ active: true }).catch(() => []),
+    getCategories().catch(() => []),
     getSiteSettings().catch(() => null),
   ])
 
@@ -41,6 +36,8 @@ export default async function ShopPage({ searchParams }: PageProps) {
   }
 
   // ── Filter products ──
+  const collectionItems = getCollectionItems(settings)
+
   let products: Product[] = allProducts
 
   if (searchParams.category) {
@@ -48,6 +45,10 @@ export default async function ShopPage({ searchParams }: PageProps) {
       const catSlug = p.category?.slug ?? p.category?.name?.toLowerCase().replace(/\s+/g, '-') ?? ''
       return catSlug === searchParams.category
     })
+  }
+
+  if (searchParams.collection) {
+    products = filterProductsByCollection(products, searchParams.collection, collectionItems)
   }
 
   // ── Sort ──
@@ -58,9 +59,12 @@ export default async function ShopPage({ searchParams }: PageProps) {
   }
   // default: newest (already ordered by created_at desc from DB)
 
-  const activeLabel = searchParams.category
-    ? displayCats.find(c => c.slug === searchParams.category)?.name ?? searchParams.category
-    : 'All Products'
+  const activeCollection = findCollectionBySlug(searchParams.collection, collectionItems)
+  const activeLabel = activeCollection
+    ? activeCollection.label
+    : searchParams.category
+      ? displayCats.find(c => c.slug === searchParams.category)?.name ?? searchParams.category
+      : 'All Products'
 
   return (
     <>
@@ -72,7 +76,7 @@ export default async function ShopPage({ searchParams }: PageProps) {
         {/* ── MOBILE: category bubbles + filter/sort bar ── */}
         <MobileShopControls
           categories={displayCats}
-          collections={COLLECTION_ROWS}
+          collections={collectionItems}
           searchParams={searchParams}
         />
 

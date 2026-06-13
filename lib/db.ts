@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { hasSupabaseConfig, supabase } from './supabase'
 import type { Product, Category, Order, SiteSettings } from '@/types'
 
 // ─── PRODUCTS ───────────────────────────────────────────────
@@ -9,6 +9,8 @@ export async function getProducts(options?: {
   active?: boolean
   limit?: number
 }) {
+  if (!hasSupabaseConfig) return [] as Product[]
+
   let query = supabase
     .from('products')
     .select('*, category:categories(id, name, slug)')
@@ -26,6 +28,8 @@ export async function getProducts(options?: {
 }
 
 export async function getProductBySlug(slug: string) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const { data, error } = await supabase
     .from('products')
     .select('*, category:categories(id, name, slug)')
@@ -42,6 +46,8 @@ export async function getFeaturedProducts(limit = 8) {
 
 // ─── CATEGORIES ─────────────────────────────────────────────
 export async function getCategories() {
+  if (!hasSupabaseConfig) return [] as Category[]
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
@@ -52,6 +58,8 @@ export async function getCategories() {
 
 // ─── ORDERS ─────────────────────────────────────────────────
 export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'updated_at'>) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const { data, error } = await supabase
     .from('orders')
     .insert(order)
@@ -62,6 +70,8 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
 }
 
 export async function getOrders() {
+  if (!hasSupabaseConfig) return [] as Order[]
+
   const { data, error } = await supabase
     .from('orders')
     .select('*')
@@ -71,6 +81,8 @@ export async function getOrders() {
 }
 
 export async function updateOrderStatus(id: string, status: Order['status']) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const { error } = await supabase
     .from('orders')
     .update({ status, updated_at: new Date().toISOString() })
@@ -80,6 +92,8 @@ export async function updateOrderStatus(id: string, status: Order['status']) {
 
 // ─── SITE SETTINGS ──────────────────────────────────────────
 export async function getSiteSettings(): Promise<SiteSettings> {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const { data, error } = await supabase
     .from('site_settings')
     .select('*')
@@ -89,6 +103,8 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 }
 
 export async function updateSiteSettings(settings: Partial<SiteSettings>) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const { error } = await supabase
     .from('site_settings')
     .update({ ...settings, updated_at: new Date().toISOString() })
@@ -103,6 +119,8 @@ export function getImageUrl(path: string) {
 }
 
 export async function uploadProductImage(file: File, productId: string) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const ext = file.name.split('.').pop()
   const path = `${productId}/${Date.now()}.${ext}`
   const { error } = await supabase.storage
@@ -113,6 +131,8 @@ export async function uploadProductImage(file: File, productId: string) {
 }
 
 export async function deleteProductImage(path: string) {
+  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+
   const parts = path.split('/product-images/')
   if (parts.length < 2) return
   const { error } = await supabase.storage
@@ -122,6 +142,8 @@ export async function deleteProductImage(path: string) {
 }
 
 export async function getCarouselProducts(): Promise<Product[]> {
+  if (!hasSupabaseConfig) return [] as Product[]
+
   const { data: slotted } = await supabase
     .from('products')
     .select('*, category:categories(id, name, slug)')
@@ -136,6 +158,8 @@ export async function getCarouselProducts(): Promise<Product[]> {
 }
 
 export async function getFeaturedMomentProducts(): Promise<Product[]> {
+  if (!hasSupabaseConfig) return [] as Product[]
+
   const { data: slotted } = await supabase
     .from('products')
     .select('*, category:categories(id, name, slug)')

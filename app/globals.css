@@ -79,6 +79,25 @@ a, button, [role="button"] {
   .img-zoom:hover { transform: scale(1.05); }
 }
 
+/* Product card overlay: visible tap cue on touch, hover reveal on desktop */
+.product-card-overlay {
+  opacity: 1;
+  background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%);
+}
+
+@media (hover: hover) {
+  .product-card-overlay {
+    opacity: 0;
+    background: rgba(0,0,0,0);
+    transition: opacity 0.3s, background 0.3s;
+  }
+
+  .group:hover .product-card-overlay {
+    opacity: 1;
+    background: rgba(0,0,0,0.45);
+  }
+}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--white); }

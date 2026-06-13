@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { X, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { uploadProductImage } from '@/lib/db'
+import { getCollectionItems } from '@/lib/collections'
 import type { Product, Category, ProductColor, SiteSettings } from '@/types'
 
 interface ProductFormProps {
@@ -13,10 +14,6 @@ interface ProductFormProps {
   categories: Category[]
   settings?: SiteSettings | null
 }
-
-// Same slug logic as CollectionsSection + ShopFilters — must stay in sync
-const toTagSlug = (name: string) =>
-  name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
 export default function ProductForm({ product, categories, settings }: ProductFormProps) {
   const router = useRouter()
@@ -46,30 +43,11 @@ export default function ProductForm({ product, categories, settings }: ProductFo
 
   // ── Read collection tag names dynamically from settings ──
   // Falls back to hardcoded defaults if settings not loaded yet
-  const collectionTagOptions: { slug: string; name: string }[] = (() => {
-    try {
-      const pc = settings?.page_configs ? JSON.parse(settings.page_configs) : null
-      const els: any[] = Array.isArray(pc?.collections?.elements) ? pc.collections.elements : []
-      const defaults: Record<string, string> = {
-        col1: 'Everyday Essentials 2026',
-        col2: 'Timeless Classics 2026',
-        col3: 'Seasonal Collections 2025',
-      }
-      return ['col1', 'col2', 'col3']
-        .map(id => {
-          const el = els.find((e: any) => e.id === id)
-          const name = el?.content || defaults[id]
-          const visible = el ? el.visible !== false : true
-          return visible ? { slug: toTagSlug(name), name } : null
-        })
-        .filter(Boolean) as { slug: string; name: string }[]
-    } catch {}
-    return [
-      { slug: toTagSlug('Everyday Essentials 2026'),  name: 'Everyday Essentials 2026' },
-      { slug: toTagSlug('Timeless Classics 2026'),    name: 'Timeless Classics 2026' },
-      { slug: toTagSlug('Seasonal Collections 2025'), name: 'Seasonal Collections 2025' },
-    ]
-  })()
+  const collectionTagOptions: { slug: string; name: string; aliases: string[] }[] = getCollectionItems(settings).map(({ slug, label, aliases }) => ({
+    slug,
+    name: label,
+    aliases,
+  }))
 
   const generateSlug = (name: string) =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -171,7 +149,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
           {/* Pricing */}
           <div className="bg-white rounded-2xl p-6 space-y-4">
             <h2 className="font-condensed font-800 text-lg">Pricing</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="label">Price (₹) *</label>
                 <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required min="0" className="input" placeholder="2999" />
@@ -286,7 +264,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
             </div>
             <div>
               <label className="label">Carousel Card Slot</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button type="button" onClick={() => setForm(f => ({ ...f, carousel_slot: '' }))} className={`py-2 rounded-lg border text-xs font-600 transition-colors ${form.carousel_slot === '' ? 'bg-black text-white border-black' : 'border-[var(--gray-light)] hover:border-black text-[var(--gray-mid)]'}`}>None</button>
                 {[1,2,3,4,5,6].map(slot => (
                   <button key={slot} type="button" onClick={() => setForm(f => ({ ...f, carousel_slot: String(slot), is_featured: true }))} className={`py-2 rounded-lg border text-xs font-600 transition-colors ${form.carousel_slot === String(slot) ? 'bg-[var(--orange)] text-white border-[var(--orange)]' : 'border-[var(--gray-light)] hover:border-[var(--orange)] hover:text-[var(--orange)]'}`}>Card {slot}</button>
@@ -304,7 +282,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
             </div>
             <div>
               <label className="label">Image Slot</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <button type="button" onClick={() => setForm(f => ({ ...f, featured_moment_slot: '' }))} className={`py-2 rounded-lg border text-xs font-600 transition-colors ${form.featured_moment_slot === '' ? 'bg-black text-white border-black' : 'border-[var(--gray-light)] hover:border-black text-[var(--gray-mid)]'}`}>None</button>
                 {[
                   { slot: '1', label: 'Main',  hint: 'Large left' },
@@ -330,13 +308,13 @@ export default function ProductForm({ product, categories, settings }: ProductFo
               <label className="label">Assign to Collection</label>
               <div className="grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => setForm(f => ({ ...f, collection_tag: '' }))} className={`py-2 rounded-lg border text-xs font-600 transition-colors ${form.collection_tag === '' ? 'bg-black text-white border-black' : 'border-[var(--gray-light)] hover:border-black text-[var(--gray-mid)]'}`}>None</button>
-                {collectionTagOptions.map(({ slug, name }) => (
-                  <button key={slug} type="button" onClick={() => setForm(f => ({ ...f, collection_tag: slug }))} className={`py-2 px-2 rounded-lg border text-xs font-600 transition-colors text-left leading-tight ${form.collection_tag === slug ? 'bg-[var(--orange)] text-white border-[var(--orange)]' : 'border-[var(--gray-light)] hover:border-[var(--orange)] hover:text-[var(--orange)]'}`}>
+                {collectionTagOptions.map(({ slug, name, aliases }) => (
+                  <button key={slug} type="button" onClick={() => setForm(f => ({ ...f, collection_tag: slug }))} className={`py-2 px-2 rounded-lg border text-xs font-600 transition-colors text-left leading-tight ${form.collection_tag === slug || aliases.includes(form.collection_tag) ? 'bg-[var(--orange)] text-white border-[var(--orange)]' : 'border-[var(--gray-light)] hover:border-[var(--orange)] hover:text-[var(--orange)]'}`}>
                     {name}
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-[var(--gray-mid)] mt-2 leading-relaxed">⚠ If you rename a collection in the page editor, re-tag your products so they still appear correctly.</p>
+              <p className="text-[10px] text-[var(--gray-mid)] mt-2 leading-relaxed">Collection URLs and tags stay stable when display names are renamed.</p>
               {form.collection_tag && <p className="text-xs text-[var(--orange)] mt-1 font-500">✓ Tagged as: {form.collection_tag}</p>}
             </div>
           </div>

@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { findCollectionBySlug, getCollectionItems } from '@/lib/collections'
 import type { Category, SiteSettings } from '@/types'
 
 interface Props {
@@ -9,12 +10,6 @@ interface Props {
 }
 
 interface CatItem { id: string; name: string; visible: boolean; imageUrl: string; count: number; fontSize: number; color: string }
-
-const COLLECTION_ROWS = [
-  { id: 'col1', label: 'Everyday Essentials 2026' },
-  { id: 'col2', label: 'Timeless Classics 2026' },
-  { id: 'col3', label: 'Seasonal Collections 2025' },
-]
 
 export default function ShopFilters({ categories, searchParams, settings }: Props) {
   // Build category list from admin _categoryItems if available, else DB categories
@@ -40,6 +35,20 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
     { value: 'price-desc', label: 'Price: High → Low' },
   ]
 
+  const collectionItems = getCollectionItems(settings)
+  const activeCollection = findCollectionBySlug(searchParams.collection, collectionItems)
+  const sortSuffix = searchParams.sort ? `&sort=${searchParams.sort}` : ''
+
+  const categoryHref = (slug: string) => `/shop?category=${slug}${sortSuffix}`
+  const collectionHref = (href: string) => `${href}${searchParams.sort ? `&sort=${searchParams.sort}` : ''}`
+  const sortHref = (sort: string) => {
+    const params = new URLSearchParams()
+    if (searchParams.category) params.set('category', searchParams.category)
+    if (activeCollection) params.set('collection', activeCollection.slug)
+    params.set('sort', sort)
+    return `/shop?${params.toString()}`
+  }
+
   return (
     // Hidden on mobile (md:block) — mobile uses MobileShopControls instead
     <aside className="hidden md:block w-52 flex-shrink-0 px-6 md:px-12 py-8 border-r border-[var(--gray-light)]">
@@ -52,7 +61,7 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
             <li>
               <Link
                 href="/shop"
-                className={`text-sm transition-colors ${!searchParams.category ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
+                className={`text-sm transition-colors ${!searchParams.category && !activeCollection ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
               >
                 All Products
               </Link>
@@ -60,7 +69,7 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
             {displayCats.map(cat => (
               <li key={cat.slug}>
                 <Link
-                  href={`/shop?category=${cat.slug}${searchParams.sort ? `&sort=${searchParams.sort}` : ''}`}
+                  href={categoryHref(cat.slug)}
                   className={`text-sm transition-colors ${searchParams.category === cat.slug ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
                 >
                   {cat.name}
@@ -74,11 +83,11 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
         <div>
           <h3 className="text-[10px] font-600 tracking-[3px] uppercase text-[var(--gray-mid)] mb-3">Collections</h3>
           <ul className="space-y-1.5">
-            {COLLECTION_ROWS.map(col => (
+            {collectionItems.map(col => (
               <li key={col.id}>
                 <Link
-                  href="/shop"
-                  className="text-sm text-[var(--gray-dark)] hover:text-black transition-colors"
+                  href={collectionHref(col.href)}
+                  className={`text-sm transition-colors ${activeCollection?.id === col.id ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
                 >
                   {col.label}
                 </Link>
@@ -94,7 +103,7 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
             {sorts.map(s => (
               <li key={s.value}>
                 <Link
-                  href={`/shop?${searchParams.category ? `category=${searchParams.category}&` : ''}sort=${s.value}`}
+                  href={sortHref(s.value)}
                   className={`text-sm transition-colors ${searchParams.sort === s.value ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
                 >
                   {s.label}

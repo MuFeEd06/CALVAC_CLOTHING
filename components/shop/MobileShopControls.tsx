@@ -13,6 +13,8 @@ interface CollectionItem {
   id: string
   label: string
   href: string
+  slug: string
+  aliases?: string[]
 }
 
 interface Props {
@@ -20,6 +22,7 @@ interface Props {
   collections: CollectionItem[]
   searchParams: {
     category?: string
+    collection?: string
     sort?: string
   }
 }
@@ -27,6 +30,9 @@ interface Props {
 export default function MobileShopControls({ categories, collections, searchParams }: Props) {
   const [filterOpen, setFilterOpen] = useState(false)
   const activeCategory = searchParams.category
+  const activeCollection = collections.find(col =>
+    col.slug === searchParams.collection || col.aliases?.includes(searchParams.collection ?? '')
+  )
   const activeSort = searchParams.sort ?? 'newest'
 
   // Prevent body scroll when drawer is open
@@ -43,12 +49,19 @@ export default function MobileShopControls({ categories, collections, searchPara
 
   const activeSortLabel = sorts.find(s => s.value === activeSort)?.label ?? 'Newest First'
 
-  const buildHref = (cat?: string, sort?: string) => {
+  const buildHref = (options: { category?: string; collection?: string; sort?: string }) => {
     const params = new URLSearchParams()
-    if (cat) params.set('category', cat)
+    if (options.category) params.set('category', options.category)
+    if (options.collection) params.set('collection', options.collection)
+    const sort = options.sort
     if (sort && sort !== 'newest') params.set('sort', sort)
     const qs = params.toString()
     return `/shop${qs ? `?${qs}` : ''}`
+  }
+
+  const withCurrentSort = (href: string) => {
+    if (!searchParams.sort || searchParams.sort === 'newest') return href
+    return `${href}&sort=${searchParams.sort}`
   }
 
   return (
@@ -64,7 +77,7 @@ export default function MobileShopControls({ categories, collections, searchPara
             href="/shop"
             scroll={false}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[11px] font-600 border transition-all duration-200 ${
-              !activeCategory
+              !activeCategory && !activeCollection
                 ? 'bg-[var(--black)] text-white border-[var(--black)]'
                 : 'border-[var(--gray-light)] text-[var(--gray-dark)] bg-white active:scale-95'
             }`}
@@ -75,7 +88,7 @@ export default function MobileShopControls({ categories, collections, searchPara
           {categories.map(cat => (
             <Link
               key={cat.slug}
-              href={buildHref(cat.slug, searchParams.sort)}
+              href={buildHref({ category: cat.slug, sort: searchParams.sort })}
               scroll={false}
               className={`flex-shrink-0 px-4 py-1.5 rounded-full text-[11px] font-600 border transition-all duration-200 ${
                 activeCategory === cat.slug
@@ -161,23 +174,23 @@ export default function MobileShopControls({ categories, collections, searchPara
             </p>
             <div className="space-y-1">
               <Link
-                href={buildHref(undefined, searchParams.sort)}
+                href={buildHref({ sort: searchParams.sort })}
                 scroll={false}
                 onClick={() => setFilterOpen(false)}
                 className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-500 transition-colors ${
-                  !activeCategory
+                  !activeCategory && !activeCollection
                     ? 'bg-[var(--black)] text-white'
                     : 'text-[var(--gray-dark)] hover:bg-[var(--gray-light)]'
                 }`}
               >
                 <span>All Products</span>
-                {!activeCategory && <Check size={14} />}
+                {!activeCategory && !activeCollection && <Check size={14} />}
               </Link>
 
               {categories.map(cat => (
                 <Link
                   key={cat.slug}
-                  href={buildHref(cat.slug, searchParams.sort)}
+                  href={buildHref({ category: cat.slug, sort: searchParams.sort })}
                   scroll={false}
                   onClick={() => setFilterOpen(false)}
                   className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-500 transition-colors ${
@@ -203,11 +216,16 @@ export default function MobileShopControls({ categories, collections, searchPara
                 {collections.map(col => (
                   <Link
                     key={col.id}
-                    href={col.href}
+                    href={withCurrentSort(col.href)}
                     onClick={() => setFilterOpen(false)}
-                    className="flex items-center w-full px-4 py-3 rounded-xl text-sm font-500 text-[var(--gray-dark)] hover:bg-[var(--gray-light)] transition-colors"
+                    className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-500 transition-colors ${
+                      activeCollection?.id === col.id
+                        ? 'bg-[var(--black)] text-white'
+                        : 'text-[var(--gray-dark)] hover:bg-[var(--gray-light)]'
+                    }`}
                   >
-                    {col.label}
+                    <span>{col.label}</span>
+                    {activeCollection?.id === col.id && <Check size={14} />}
                   </Link>
                 ))}
               </div>
@@ -223,7 +241,11 @@ export default function MobileShopControls({ categories, collections, searchPara
               {sorts.map(s => (
                 <Link
                   key={s.value}
-                  href={buildHref(activeCategory, s.value)}
+                  href={buildHref({
+                    category: activeCategory,
+                    collection: activeCategory ? undefined : activeCollection?.slug,
+                    sort: s.value,
+                  })}
                   scroll={false}
                   onClick={() => setFilterOpen(false)}
                   className={`flex items-center justify-between w-full px-4 py-3.5 rounded-xl border text-sm font-500 transition-colors ${

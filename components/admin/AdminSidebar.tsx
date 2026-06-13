@@ -1,8 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, ExternalLink } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, ExternalLink, Menu, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const navItems = [
@@ -15,8 +16,10 @@ const navItems = [
 export default function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [open, setOpen] = useState(false)
 
   const handleLogout = async () => {
+    setOpen(false)
     await supabase.auth.signOut()
     router.push('/admin/login')
   }
@@ -25,11 +28,45 @@ export default function AdminSidebar() {
     exact ? pathname === href : pathname.startsWith(href)
 
   return (
-    <aside className="w-56 bg-[var(--black)] flex flex-col py-6 flex-shrink-0">
+    <>
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--black)] flex items-center justify-between px-4">
+        <div>
+          <span className="font-condensed font-900 text-lg tracking-[4px] text-white">CALVAC</span>
+          <p className="text-[9px] text-white/30 tracking-widest uppercase -mt-0.5">Admin</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-white/10 text-white"
+          aria-label="Open admin navigation"
+        >
+          <Menu size={18} />
+        </button>
+      </header>
+
+      <button
+        type="button"
+        className={`md:hidden fixed inset-0 z-40 bg-black/45 transition-opacity ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setOpen(false)}
+        aria-label="Close admin navigation"
+        aria-hidden={!open}
+      />
+
+      <aside className={`fixed md:static inset-y-0 left-0 z-50 w-56 bg-[var(--black)] flex flex-col py-6 flex-shrink-0 transition-transform duration-200 ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       {/* Logo */}
-      <div className="px-5 mb-8">
-        <span className="font-condensed font-900 text-xl tracking-[4px] text-white">CALVAC</span>
-        <p className="text-[10px] text-white/30 tracking-widest uppercase mt-0.5">Admin</p>
+      <div className="px-5 mb-8 flex items-start justify-between gap-4">
+        <div>
+          <span className="font-condensed font-900 text-xl tracking-[4px] text-white">CALVAC</span>
+          <p className="text-[10px] text-white/30 tracking-widest uppercase mt-0.5">Admin</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="md:hidden w-8 h-8 flex items-center justify-center rounded-xl border border-white/10 text-white/70"
+          aria-label="Close admin navigation"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -40,6 +77,7 @@ export default function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-500 transition-all ${
                 active
                   ? 'bg-white/10 text-white'
@@ -61,6 +99,7 @@ export default function AdminSidebar() {
         <Link
           href="/"
           target="_blank"
+          onClick={() => setOpen(false)}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition-all"
         >
           <ExternalLink size={16} />
@@ -74,6 +113,7 @@ export default function AdminSidebar() {
           Sign Out
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }

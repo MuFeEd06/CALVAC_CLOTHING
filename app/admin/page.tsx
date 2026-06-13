@@ -55,15 +55,15 @@ export default async function AdminDashboard() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-condensed font-900 text-4xl tracking-tight">Dashboard</h1>
+        <h1 className="font-condensed font-900 text-3xl md:text-4xl tracking-tight">Dashboard</h1>
         <p className="text-[var(--gray-mid)] text-sm mt-1">Welcome back. Here's what's happening with CALVAC.</p>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {stats.map(stat => (
           <Link
             key={stat.label}
@@ -73,7 +73,7 @@ export default async function AdminDashboard() {
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.color}`}>
               <stat.icon size={18} />
             </div>
-            <div className="font-condensed font-800 text-3xl">{stat.value}</div>
+            <div className="font-condensed font-800 text-2xl md:text-3xl break-words">{stat.value}</div>
             <div className="text-xs text-[var(--gray-mid)] mt-0.5 tracking-wide">{stat.label}</div>
           </Link>
         ))}

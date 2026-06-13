@@ -551,7 +551,7 @@ function DeviceCanvasEditor({
 
   return (
     <>
-      <div style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
+      <div className="admin-settings-page-list" style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
         <p style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', padding: '4px 8px 10px', fontFamily: 'Barlow,sans-serif' }}>PAGES</p>
         {pages.map(pid => {
           const c = configs[pid]
@@ -567,7 +567,7 @@ function DeviceCanvasEditor({
         })}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4' }}>
+      <div className="admin-settings-canvas" style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4' }}>
         <div style={{ background: device === 'desktop' ? '#fffbe6' : '#eef8f3', border: `1px solid ${device === 'desktop' ? '#f0d060' : '#bce2ce'}`, borderRadius: 8, padding: '8px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon size={14} color={device === 'desktop' ? '#a16c00' : '#16834a'} />
           <span style={{ fontSize: 11, color: device === 'desktop' ? '#7a6000' : '#166534', fontFamily: 'Barlow,sans-serif', lineHeight: 1.5 }}>
@@ -612,7 +612,7 @@ function DeviceCanvasEditor({
         </div>
       </div>
 
-      <div style={{ width: 250, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', padding: 14, flexShrink: 0 }}>
+      <div className="admin-settings-panel" style={{ width: 250, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', padding: 14, flexShrink: 0 }}>
         <DeviceElementPanel
           pageId={activePage}
           selected={selEl}
@@ -1280,7 +1280,7 @@ function MobilePageEditor({
   return (
     <>
       {/* ── Left sidebar: section list ── */}
-      <div style={{ width: 164, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
+      <div className="admin-settings-page-list" style={{ width: 164, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
         <p style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', padding: '4px 8px 10px', fontFamily: 'Barlow,sans-serif' }}>SECTIONS</p>
         {pages.map(pid => {
           const c = configs[pid]
@@ -1297,7 +1297,7 @@ function MobilePageEditor({
       </div>
 
       {/* ── Center: phone preview + controls ── */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="admin-settings-canvas" style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Info banner */}
         <div style={{ background: '#eef4ff', border: '1px solid #c7d7f8', borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Smartphone size={13} color="#4b72e8" />
@@ -1337,7 +1337,7 @@ function MobilePageEditor({
       </div>
 
       {/* ── Right: element list + property editor ── */}
-      <div style={{ width: 248, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="admin-settings-panel" style={{ width: 248, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
 
         {/* Element list header */}
         <div style={{ padding: '11px 14px 10px', borderBottom: '1px solid #f0f0ee', background: '#fafaf9', flexShrink: 0 }}>
@@ -1592,17 +1592,17 @@ export default function AdminSettingsPage() {
   })
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Barlow,sans-serif', background: '#f0efed' }}>
+    <div className="admin-settings-root" style={{ height: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Barlow,sans-serif', background: '#f0efed' }}>
 
       {/* ── Top Bar ── */}
-      <div style={{ padding: '12px 20px', borderBottom: '1px solid #e8e8e5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', flexShrink: 0, gap: 12 }}>
+      <div className="admin-settings-topbar" style={{ padding: '12px 20px', borderBottom: '1px solid #e8e8e5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', flexShrink: 0, gap: 12 }}>
         <div>
           <h1 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 22, margin: 0 }}>Landing Page Editor</h1>
           <p style={{ fontSize: 11, color: '#aaa', margin: '1px 0 0' }}>Edit every section of your storefront</p>
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: 3, background: '#f0efed', padding: 3, borderRadius: 12, flexShrink: 0 }}>
+        <div className="admin-settings-tabs" style={{ display: 'flex', gap: 3, background: '#f0efed', padding: 3, borderRadius: 12, flexShrink: 0 }}>
           {([
             ['desktop',      'Desktop',      Monitor],
             ['tablet',       'Tablet',       Tablet],
@@ -1621,7 +1621,7 @@ export default function AdminSettingsPage() {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
+      <div className="admin-settings-workspace" style={{ flex: 1, overflow: 'hidden', display: 'flex' }}>
 
         {/* ════════════════════════════════════════
             DESKTOP EDITOR TAB
@@ -1629,7 +1629,7 @@ export default function AdminSettingsPage() {
         {tab === 'desktop' && (
           <>
             {/* Left sidebar — page list */}
-            <div style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
+            <div className="admin-settings-page-list" style={{ width: 170, background: '#fff', borderRight: '1px solid #e8e8e5', overflowY: 'auto', flexShrink: 0, padding: '10px 6px' }}>
               <p style={{ fontSize: 10, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', padding: '4px 8px 10px', fontFamily: 'Barlow,sans-serif' }}>PAGES</p>
               {desktopPages.map(pid => {
                 const c = configs[pid]
@@ -1646,7 +1646,7 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Center canvas */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4' }}>
+            <div className="admin-settings-canvas" style={{ flex: 1, overflowY: 'auto', padding: '16px 12px', background: '#e8e7e4' }}>
               <div style={{ background: '#fffbe6', border: '1px solid #f0d060', borderRadius: 8, padding: '8px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14 }}>💡</span>
                 <span style={{ fontSize: 11, color: '#7a6000', fontFamily: 'Barlow,sans-serif', lineHeight: 1.5 }}>
@@ -1696,7 +1696,7 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* Right — desktop properties panel */}
-            <div style={{ width: 230, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', padding: 14, flexShrink: 0 }}>
+            <div className="admin-settings-panel" style={{ width: 230, borderLeft: '1px solid #e8e8e5', background: '#fff', overflowY: 'auto', padding: 14, flexShrink: 0 }}>
               {activePage === 'categories' ? (
                 /* Category Items manager */
                 <div>
@@ -2038,8 +2038,8 @@ export default function AdminSettingsPage() {
             STORE INFO TAB
         ════════════════════════════════════════ */}
         {tab === 'store' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: 32 }}>
-            <div style={{ maxWidth: 520, background: '#fff', borderRadius: 16, padding: 28 }}>
+          <div className="admin-settings-form-tab" style={{ flex: 1, overflowY: 'auto', padding: 32 }}>
+            <div className="admin-settings-form-card" style={{ maxWidth: 520, background: '#fff', borderRadius: 16, padding: 28 }}>
               <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 22, marginBottom: 28 }}>Store Details</h2>
               <Field label="Brand Name"       value={brandName} onChange={setBrandName} />
               <Field label="WhatsApp Number"  value={whatsapp}  onChange={setWhatsapp} placeholder="919876543210" hint="Country code + number, no + sign" />
@@ -2052,8 +2052,8 @@ export default function AdminSettingsPage() {
             ANNOUNCEMENT TAB
         ════════════════════════════════════════ */}
         {tab === 'announcement' && (
-          <div style={{ flex: 1, overflowY: 'auto', padding: 32 }}>
-            <div style={{ maxWidth: 520, background: '#fff', borderRadius: 16, padding: 28 }}>
+          <div className="admin-settings-form-tab" style={{ flex: 1, overflowY: 'auto', padding: 32 }}>
+            <div className="admin-settings-form-card" style={{ maxWidth: 520, background: '#fff', borderRadius: 16, padding: 28 }}>
               <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 22, marginBottom: 8 }}>Announcement Bar</h2>
               <p style={{ fontSize: 12, color: '#aaa', marginBottom: 24 }}>Shown at the top of every page. Leave blank to hide.</p>
               <Field label="Announcement Text" value={announcement} onChange={setAnnouncement} multiline placeholder="Free shipping on orders above ₹2000 · New drop every Friday" />
@@ -2067,6 +2067,124 @@ export default function AdminSettingsPage() {
         )}
 
       </div>
+      <style>{`
+        @media (max-width: 1023px) {
+          .admin-settings-root {
+            min-height: 100dvh !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+
+          .admin-settings-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            flex-wrap: wrap;
+            align-items: flex-start !important;
+            padding: 10px 12px !important;
+          }
+
+          .admin-settings-tabs {
+            order: 3;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto;
+            justify-content: flex-start;
+            scrollbar-width: none;
+          }
+
+          .admin-settings-tabs::-webkit-scrollbar {
+            display: none;
+          }
+
+          .admin-settings-tabs button {
+            flex: 0 0 auto;
+          }
+
+          .admin-settings-workspace {
+            display: block !important;
+            overflow: visible !important;
+            flex: none !important;
+          }
+
+          .admin-settings-page-list {
+            width: 100% !important;
+            display: flex !important;
+            gap: 6px;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            border-right: none !important;
+            border-bottom: 1px solid #e8e8e5;
+            padding: 8px !important;
+            scrollbar-width: none;
+          }
+
+          .admin-settings-page-list::-webkit-scrollbar {
+            display: none;
+          }
+
+          .admin-settings-page-list > p {
+            display: none;
+          }
+
+          .admin-settings-page-list button {
+            min-width: 142px;
+            flex: 0 0 auto;
+            margin-bottom: 0 !important;
+          }
+
+          .admin-settings-canvas {
+            overflow: visible !important;
+            padding: 12px 10px !important;
+          }
+
+          .admin-settings-canvas > div {
+            max-width: 100%;
+          }
+
+          .admin-settings-panel {
+            width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            border-left: none !important;
+            border-top: 1px solid #e8e8e5;
+          }
+
+          .admin-settings-form-tab {
+            padding: 18px 12px !important;
+            overflow: visible !important;
+          }
+
+          .admin-settings-form-card {
+            max-width: none !important;
+            padding: 20px !important;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .admin-settings-topbar {
+            top: 56px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .admin-settings-topbar {
+            gap: 10px !important;
+          }
+
+          .admin-settings-topbar h1 {
+            font-size: 20px !important;
+          }
+
+          .admin-settings-canvas {
+            padding: 10px 8px !important;
+          }
+
+          .admin-settings-canvas [style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }

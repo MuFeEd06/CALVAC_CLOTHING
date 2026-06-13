@@ -45,9 +45,9 @@ export default function AdminOrdersPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
-        <h1 className="font-condensed font-900 text-4xl tracking-tight">Orders</h1>
+        <h1 className="font-condensed font-900 text-3xl md:text-4xl tracking-tight">Orders</h1>
         <p className="text-[var(--gray-mid)] text-sm mt-1">{orders.length} total · {orders.filter(o => o.status === 'pending').length} pending</p>
       </div>
 
@@ -76,7 +76,7 @@ export default function AdminOrdersPage() {
             <div key={order.id} className="bg-white rounded-2xl overflow-hidden">
               {/* Order header */}
               <div
-                className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-[#fafaf8] transition-colors"
+                className="flex flex-wrap sm:flex-nowrap items-center gap-4 px-4 md:px-6 py-4 cursor-pointer hover:bg-[#fafaf8] transition-colors"
                 onClick={() => setExpanded(expanded === order.id ? null : order.id)}
               >
                 <div className="flex-1 min-w-0">
@@ -95,7 +95,7 @@ export default function AdminOrdersPage() {
                     {order.customer_name} · {order.customer_phone} · {new Date(order.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="text-left sm:text-right flex-shrink-0">
                   <p className="font-condensed font-700 text-xl">₹{order.subtotal.toLocaleString('en-IN')}</p>
                   <p className="text-xs text-[var(--gray-mid)]">{order.items.length} item{order.items.length > 1 ? 's' : ''}</p>
                 </div>
@@ -107,7 +107,7 @@ export default function AdminOrdersPage() {
 
               {/* Expanded order details */}
               {expanded === order.id && (
-                <div className="px-6 pb-5 border-t border-[var(--gray-light)]">
+                <div className="px-4 md:px-6 pb-5 border-t border-[var(--gray-light)]">
                   <div className="grid md:grid-cols-2 gap-6 mt-4">
                     {/* Items */}
                     <div>

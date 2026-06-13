@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Product, SiteSettings } from '@/types'
+import { getCollectionHref } from '@/lib/collections'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
-import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { clampedParallax, imageIntroStyle, usePrefersReducedMotion } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
@@ -42,21 +43,19 @@ function useSectionProgress() {
   return { ref, progress, scrollY }
 }
 
-function fadeIn(progress: number, start: number, end: number): React.CSSProperties {
-  const p = Math.min(1, Math.max(0, (progress - start) / Math.max(0.01, end - start)))
-  return { filter: `blur(${((1-p)*16).toFixed(1)}px)`, opacity: Number(p.toFixed(3)), transform: `translateY(${((1-p)*24).toFixed(1)}px)`, transition: p > 0 ? 'filter 0.6s cubic-bezier(0.4,0,0.2,1),opacity 0.6s cubic-bezier(0.4,0,0.2,1),transform 0.6s cubic-bezier(0.4,0,0.2,1)' : 'none', willChange: 'filter,opacity,transform' }
-}
-
 export default function CollectionsSection({ products, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
+  const prefersReducedMotion = usePrefersReducedMotion()
   const viewport = useViewportKind()
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const cfg = mergeDeviceConfig(settings ?? null, 'collections', DEFAULTS, viewport)
-  const txCfg = getScrollTransitionConfig(settings ?? null)
-  const exitStyle = scrollExitStyle(scrollY, txCfg)
 
   const parallax1 = (scrollY * 0.16).toFixed(1)
-  const parallax2 = (scrollY * 0.22).toFixed(1)
+  const mobileParallax1 = clampedParallax(scrollY, 0.06, 34)
+  const mobileParallax2 = clampedParallax(scrollY, 0.035, 16)
+  const tabletParallax1 = clampedParallax(scrollY, 0.07, 36)
+  const tabletParallax2 = clampedParallax(scrollY, 0.04, 18)
+  const imageIntro = (start: number, end: number) => imageIntroStyle(progress, start, end, prefersReducedMotion)
   const img1 = imgUrl(cfg, 'model_image') || products[0]?.images?.[0] || ''
   const featuredImg = imgUrl(cfg, 'featured_img') || products[2]?.images?.[0] || ''
   const collectionRows = [
@@ -77,8 +76,10 @@ export default function CollectionsSection({ products, settings }: Props) {
               {vis(cfg,'intro') && <p style={{ fontSize: 16, lineHeight: 1.85, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, textAlign: 'center' }}>{txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}</p>}
               {vis(cfg,'model_image') && (
                 <div>
-                  <div style={{ position: 'relative', aspectRatio: '4 / 5.4', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
-                    {img1 ? <Image src={img1} alt="Collection" fill sizes="30vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                  <div style={{ ...imageIntro(0.05, 0.38), position: 'relative', aspectRatio: '4 / 5.4', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
+                    <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', transform: `translateY(${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                      {img1 ? <Image src={img1} alt="Collection" fill sizes="30vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
+                    </div>
                   </div>
                   {vis(cfg,'caption') && <p style={{ margin: '14px 0 0', fontSize: 13, color: clr(cfg,'caption','#aaa'), fontStyle: 'italic', lineHeight: 1.6 }}>{txt(cfg,'caption','Being Part Of Our Journey.')}</p>}
                 </div>
@@ -91,13 +92,15 @@ export default function CollectionsSection({ products, settings }: Props) {
                   <p style={{ fontSize: 16, lineHeight: 1.75, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 22px', maxWidth: 330 }}>{txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}</p>
                   {vis(cfg,'feat_btn') && <Link href="/shop" style={{ display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'feat_btn','GET STARTED')} →</Link>}
                 </div>
-                <div style={{ position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
-                  {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="132px" style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
+                <div style={{ ...imageIntro(0.1, 0.42), position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+                  <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                    {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="132px" style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
+                  </div>
                 </div>
               </div>
               <div>
                 {collectionRows.map((row, i) => vis(cfg, row.id) ? (
-                  <Link key={row.id} href="/shop" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 44px', gap: 16, alignItems: 'center', minHeight: 92, padding: '18px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none' }}>
+                  <Link key={row.id} href={getCollectionHref(row.id, txt(cfg, row.id, row.def))} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 44px', gap: 16, alignItems: 'center', minHeight: 92, padding: '18px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none' }}>
                     <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(34px,4.8vw,54px)', lineHeight: 1, color: clr(cfg,row.id,'#555'), overflowWrap: 'anywhere' }}>{txt(cfg,row.id,row.def)}</span>
                     <span style={{ width: 44, height: 44, border: '1.5px solid #ddd', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: 15 }}>→</span>
                   </Link>
@@ -109,26 +112,26 @@ export default function CollectionsSection({ products, settings }: Props) {
       )
     }
 
-    // ── MOBILE: Premium layout with fadeIn + parallax + exitStyle ──
+    // Mobile: stable text with image intro and safe parallax.
     return (
       <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '52px 0 68px' }}>
 
-        {/* Intro text — fadeIn + exitStyle */}
+        {/* Intro text */}
         {vis(cfg,'intro') && (
-          <div style={{ ...fadeIn(progress, 0.0, 0.3), ...exitStyle, padding: '0 20px', marginBottom: 24 }}>
+          <div style={{ padding: '0 20px', marginBottom: 24 }}>
             <p style={{ fontSize: 13, lineHeight: 1.8, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, maxWidth: 300, textAlign: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
               {txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}
             </p>
           </div>
         )}
 
-        {/* S-shape model image — parallax (no exitStyle on images) */}
+        {/* S-shape model image */}
         {vis(cfg,'model_image') && (
-          <div style={{ ...fadeIn(progress, 0.04, 0.38), position: 'relative', marginBottom: 16 }}>
+          <div style={{ ...imageIntro(0.04, 0.38), position: 'relative', marginBottom: 16 }}>
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', margin: '0 20px' }}>
               <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
               <div style={{ position: 'relative', zIndex: 2, height: 'min(80vw,340px)', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '132%', transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img1
                     ? <Image src={img1} alt="Collection" fill sizes="(max-width:768px) 92vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} />
                     : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#c8c4bc,#b0aca4)' }} />}
@@ -139,15 +142,15 @@ export default function CollectionsSection({ products, settings }: Props) {
               </div>
             </div>
             {vis(cfg,'caption') && (
-              <p style={{ ...exitStyle, margin: '12px 20px 0', fontSize: 11, color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
+              <p style={{ margin: '12px 20px 0', fontSize: 11, color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
                 {txt(cfg,'caption','Being Part Of Our Journey.')}
               </p>
             )}
           </div>
         )}
 
-        {/* Featured card — fadeIn + exitStyle */}
-        <div style={{ ...fadeIn(progress, 0.1, 0.44), ...exitStyle, padding: '0 20px', paddingBottom: 24, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
+        {/* Featured card */}
+        <div style={{ padding: '0 20px', paddingBottom: 24, borderBottom: '1px solid #e8e8e5', marginBottom: 4 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 88px', gap: 16, alignItems: 'start' }}>
             <div>
               <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(36px,12vw,54px)', lineHeight: 0.98, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 10px', letterSpacing: '-0.2px' }}>
@@ -163,18 +166,20 @@ export default function CollectionsSection({ products, settings }: Props) {
               )}
             </div>
             {/* Featured thumbnail — desktop polygon */}
-            <div style={{ position: 'relative', width: 88, height: 88, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
-              {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="88px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
-                : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
+            <div style={{ ...imageIntro(0.1, 0.44), position: 'relative', width: 88, height: 88, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+              <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="88px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
+                  : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Collection rows — fadeIn + exitStyle */}
-        <div style={{ ...fadeIn(progress, 0.18, 0.52), ...exitStyle, padding: '0 20px' }}>
+        {/* Collection rows */}
+        <div style={{ padding: '0 20px' }}>
           {collectionRows.map((row, i) => (
             vis(cfg, row.id) ? (
-              <Link key={i} href="/shop"
+              <Link key={i} href={getCollectionHref(row.id, txt(cfg, row.id, row.def))}
                 onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', minHeight: 72, background: 'transparent' }}
               >
@@ -199,7 +204,7 @@ export default function CollectionsSection({ products, settings }: Props) {
         {/* ── LEFT COLUMN ── */}
         <div>
           {vis(cfg,'intro') && (
-            <div style={{ ...fadeIn(progress, 0.0, 0.35), ...exitStyle }}>
+            <div>
               <p style={{ fontSize: fsize(cfg,'intro',12), lineHeight: 1.8, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', maxWidth: 220, marginBottom: 32, textAlign: 'center', marginLeft: 'auto', marginRight: 'auto' }}>
                 {txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}
               </p>
@@ -210,7 +215,7 @@ export default function CollectionsSection({ products, settings }: Props) {
             {/* S-shape wrapper for image 1 */}
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative' }}>
               <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
-              <div style={{ ...fadeIn(progress, 0.05, 0.42), position: 'relative', zIndex: 2 }}>
+              <div style={{ ...imageIntro(0.05, 0.42), position: 'relative', zIndex: 2 }}>
                 <div style={{ position: 'relative', height: 380, overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                     {img1 ? <Image src={img1} alt="Collection" fill style={{ objectFit: 'cover', objectPosition: 'top center' }} />
@@ -222,7 +227,7 @@ export default function CollectionsSection({ products, settings }: Props) {
               </div>
             </div>
             {vis(cfg,'caption') && (
-              <div style={fadeIn(progress, 0.2, 0.55)}>
+              <div>
                 <p style={{ marginTop: 14, fontSize: fsize(cfg,'caption',11), color: clr(cfg,'caption','#aaa'), fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
                   {txt(cfg,'caption','Being Part Of Our Journey.')}
                 </p>
@@ -232,9 +237,9 @@ export default function CollectionsSection({ products, settings }: Props) {
         </div>
 
         {/* ── RIGHT COLUMN ── */}
-        <div style={exitStyle}>
+        <div>
           {/* Featured card */}
-          <div style={fadeIn(progress, 0.0, 0.38)}>
+          <div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 20, alignItems: 'start', paddingBottom: 28, borderBottom: '1px solid #e8e8e5' }}>
               <div>
                 <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: `clamp(22px,2.8vw,${fsize(cfg,'feat_title',34)}px)`, color: clr(cfg,'feat_title','#0d0d0d'), margin: '0 0 10px', letterSpacing: '-0.3px' }}>
@@ -251,7 +256,7 @@ export default function CollectionsSection({ products, settings }: Props) {
                   </Link>
                 )}
               </div>
-              <div style={{ width: 120, height: 120, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), position: 'relative', clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+              <div style={{ ...imageIntro(0.1, 0.38), width: 120, height: 120, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), position: 'relative', clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
                 {featuredImg ? <Image src={featuredImg} alt="Featured" fill style={{ objectFit: 'cover', objectPosition: 'top' }} />
                   : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
               </div>
@@ -259,10 +264,10 @@ export default function CollectionsSection({ products, settings }: Props) {
           </div>
 
           {/* Collection rows */}
-          <div style={fadeIn(progress, 0.1, 0.48)}>
+          <div>
             {collectionRows.map((row, i) => (
               vis(cfg, row.id) ? (
-                <Link key={i} href="/shop" onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s', background: hoveredRow === i ? 'rgba(0,0,0,0.015)' : 'transparent' }}>
+                <Link key={i} href={getCollectionHref(row.id, txt(cfg, row.id, row.def))} onMouseEnter={() => setHoveredRow(i)} onMouseLeave={() => setHoveredRow(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 0', borderBottom: '1px solid #e8e8e5', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s', background: hoveredRow === i ? 'rgba(0,0,0,0.015)' : 'transparent' }}>
                   <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: `clamp(20px,2.5vw,${fsize(cfg,row.id,30)}px)`, color: hoveredRow === i ? '#0d0d0d' : clr(cfg,row.id,'#555'), letterSpacing: '-0.3px', transition: 'color 0.2s,transform 0.2s', transform: hoveredRow === i ? 'translateX(6px)' : 'translateX(0)' }}>
                     {txt(cfg, row.id, row.def)}
                   </span>

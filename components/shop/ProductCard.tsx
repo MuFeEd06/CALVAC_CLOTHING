@@ -94,26 +94,6 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           </div>
         )}
       </div>
-
-      <style>{`
-        /* Mobile: always show overlay so users know it's tappable */
-        .product-card-overlay {
-          opacity: 1;
-          background: linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 60%);
-        }
-        /* Desktop: hide until hover */
-        @media (hover: hover) {
-          .product-card-overlay {
-            opacity: 0;
-            background: rgba(0,0,0,0);
-            transition: opacity 0.3s, background 0.3s;
-          }
-          .group:hover .product-card-overlay {
-            opacity: 1;
-            background: rgba(0,0,0,0.45);
-          }
-        }
-      `}</style>
     </Link>
   )
 }

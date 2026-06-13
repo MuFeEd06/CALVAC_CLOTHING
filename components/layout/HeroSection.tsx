@@ -8,6 +8,7 @@ import type { SiteSettings } from '@/types'
 import { buildPageHelper } from '@/lib/pageConfig'
 import { HERO_DEFAULTS } from '@/lib/pageDefaults'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { clampedParallax } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface HeroElement {
@@ -78,13 +79,14 @@ export default function HeroSection({ settings }: Props) {
     const isTablet = viewport === 'tablet'
     const headline = `${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`
     const padX = isTablet ? 'clamp(32px,7vw,72px)' : '20px'
+    const tabletParallax = clampedParallax(scrollY, 0.07, 36)
 
     // ── TABLET: unchanged original layout ──
     if (isTablet) {
       return (
         <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,0.86fr) minmax(280px,1.14fr)', gap: 'clamp(28px,5vw,64px)', alignItems: 'center', minHeight: 'clamp(520px,74vh,760px)', padding: `clamp(72px,10vh,118px) ${padX} clamp(56px,8vh,92px)` }}>
-            <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ ...exitStyle, position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 24 }}>
               {vis('tag_left') && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '4px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
@@ -113,29 +115,24 @@ export default function HeroSection({ settings }: Props) {
             </div>
             <div style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
               <div style={{ position: 'absolute', inset: '0 4% 0 0', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), overflow: 'hidden' }}>
-                {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
+                <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', transform: `translateY(${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
+                </div>
               </div>
-              {vis('orange_star') && <div className="animate-spin-slow" style={{ position: 'absolute', left: '2%', top: '62%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 34, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
-              {vis('tag_right') && <p style={{ position: 'absolute', right: 0, top: '23%', maxWidth: 160, fontSize: 34, lineHeight: 1.15, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '5px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0 }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
-              {vis('stat') && <div style={{ position: 'absolute', right: '2%', bottom: '6%', textAlign: 'right' }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 86, lineHeight: 0.85, fontWeight: 900, margin: 0 }}>{el('stat')?.content ?? '280K'}</p>{vis('stat_label') && <p style={{ marginTop: 8, fontSize: 10, letterSpacing: '3px', color: el('stat_label')?.color ?? '#aaa' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
+              {vis('orange_star') && <div className="animate-spin-slow" style={{ ...exitStyle, position: 'absolute', left: '2%', top: '62%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 34, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
+              {vis('tag_right') && <p style={{ ...exitStyle, position: 'absolute', right: 0, top: '23%', maxWidth: 160, fontSize: 34, lineHeight: 1.15, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '5px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0 }}>{el('tag_right')?.content ?? 'Styled For Life.'}</p>}
+              {vis('stat') && <div style={{ ...exitStyle, position: 'absolute', right: '2%', bottom: '6%', textAlign: 'right' }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 86, lineHeight: 0.85, fontWeight: 900, margin: 0 }}>{el('stat')?.content ?? '280K'}</p>{vis('stat_label') && <p style={{ marginTop: 8, fontSize: 10, letterSpacing: '3px', color: el('stat_label')?.color ?? '#aaa' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</div>}
             </div>
           </div>
         </section>
       )
     }
 
-    // ── MOBILE: Premium layout — parallax + fadeIn + exitStyle ──
+    // Mobile: scroll outro on content, parallax-only image.
     // Hero is at top so scrollY drives all effects directly (no sectionProgress needed)
-    const mobileParallax = (scrollY * 0.15).toFixed(1)
+    const mobileParallax = clampedParallax(scrollY, 0.06, 34)
     // fadeIn for text zones based on how far scrollY is (they start visible, exit on scroll)
     const mobileExitStyle = scrollExitStyle(scrollY, txCfg)
-    // Simple fade-in on load (starts at 0, completes quickly)
-    const textFadeIn: React.CSSProperties = {
-      opacity: Math.min(1, scrollY === 0 ? 1 : 1),
-      transform: `translateY(0px)`,
-      transition: 'opacity 0.6s cubic-bezier(0.4,0,0.2,1)',
-    }
-
     return (
       <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd', minHeight: '100svh' }}>
         {/* Guide lines (decorative, like desktop) */}
@@ -163,14 +160,14 @@ export default function HeroSection({ settings }: Props) {
         {/* Zone 2 — full-width hero image — parallax (image does NOT get exitStyle) */}
         <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de') }}>
           {/* Parallax inner wrapper */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+          <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
             {heroImageUrl ? (
               <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
             ) : null}
           </div>
           {/* Stat — overlaid bottom-right like desktop */}
           {vis('stat') && (
-            <div style={{ position: 'absolute', right: padX, bottom: 14, textAlign: 'right', zIndex: 2 }}>
+            <div style={{ ...mobileExitStyle, position: 'absolute', right: padX, bottom: 14, textAlign: 'right', zIndex: 2 }}>
               <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 'clamp(52px,17vw,76px)', lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>
                 {el('stat')?.content ?? '280K'}
               </p>
@@ -183,13 +180,13 @@ export default function HeroSection({ settings }: Props) {
           )}
           {/* Orange star — bottom-left like desktop */}
           {vis('orange_star') && (
-            <div className="animate-spin-slow" style={{ position: 'absolute', left: padX, bottom: '18%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 36, lineHeight: 1, zIndex: 2 }}>
+            <div className="animate-spin-slow" style={{ ...mobileExitStyle, position: 'absolute', left: padX, bottom: '18%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 36, lineHeight: 1, zIndex: 2 }}>
               {el('orange_star')?.content ?? '✦'}
             </div>
           )}
           {/* Styled For Life tag — top-right like desktop */}
           {vis('tag_right') && (
-            <p style={{ position: 'absolute', right: padX, top: 14, maxWidth: 90, fontSize: 18, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, textAlign: 'right', zIndex: 2 }}>
+            <p style={{ ...mobileExitStyle, position: 'absolute', right: padX, top: 14, maxWidth: 90, fontSize: 18, lineHeight: 1.1, color: el('tag_right')?.color ?? '#aaa', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', fontFamily: '"Barlow Condensed",sans-serif', margin: 0, textAlign: 'right', zIndex: 2 }}>
               {el('tag_right')?.content ?? 'Styled For Life.'}
             </p>
           )}

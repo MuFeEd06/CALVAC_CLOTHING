@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
+import { clampedParallax } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
@@ -87,6 +88,12 @@ export default function FeaturedMoments({ products, settings }: Props) {
   const parallax3 = (scrollY * 0.22).toFixed(1)
   // FIX: thumb uses negative top offset so parallax doesn't leave gap at top
   const parallax2 = (scrollY * 0.12).toFixed(1)
+  const mobileParallax1 = clampedParallax(scrollY, 0.06, 34)
+  const mobileParallax2 = clampedParallax(scrollY, 0.035, 16)
+  const mobileParallax3 = clampedParallax(scrollY, 0.045, 26)
+  const tabletParallax1 = clampedParallax(scrollY, 0.07, 36)
+  const tabletParallax2 = clampedParallax(scrollY, 0.04, 18)
+  const tabletParallax3 = clampedParallax(scrollY, 0.05, 28)
 
   if (viewport !== 'desktop') {
     const isTablet = viewport === 'tablet'
@@ -98,7 +105,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
         <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden', borderTop: '1px solid #e8e8e5', padding: 'clamp(64px,9vw,96px) clamp(32px,6vw,72px)' }}>
           <div style={{ position: 'absolute', left: '36%', top: '-10%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(380px,48vw,560px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
           <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'minmax(0,0.95fr) minmax(280px,1.05fr)', gap: 'clamp(28px,5vw,58px)', alignItems: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ ...exitStyle, display: 'flex', flexDirection: 'column', gap: 24 }}>
               {vis(cfg, 'headline') && (
                 <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(70px,9vw,112px)', lineHeight: 0.92, letterSpacing: 0, color: clr(cfg,'headline','#0d0d0d'), margin: 0, whiteSpace: 'pre-line', maxWidth: 440 }}>
                   {txt(cfg, 'headline', 'All - about\nmoments C26')}
@@ -120,22 +127,30 @@ export default function FeaturedMoments({ products, settings }: Props) {
               {vis(cfg, 'main_image') && (
                 <div>
                   <div onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)} style={{ position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default' }}>
-                    {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="34vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', transform: `translateY(${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                      {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="34vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    </div>
                   </div>
+                  <div style={exitStyle}>
                   {vis(cfg, 'caption1') && <p style={{ margin: '12px 0 0', fontSize: 12, color: clr(cfg,'caption1','#aaa'), letterSpacing: '0.4px', fontStyle: 'italic' }}>{txt(cfg,'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}</p>}
                   {vis(cfg, 'price1') && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 42, margin: '8px 0 0', color: clr(cfg,'price1','#0d0d0d') }}>{p1Price}</p>}
+                  </div>
                 </div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                {vis(cfg, 'description') && <p style={{ flex: 1, fontSize: 14, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>{txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}</p>}
+                {vis(cfg, 'description') && <p style={{ ...exitStyle, flex: 1, fontSize: 14, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>{txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}</p>}
                 {vis(cfg, 'thumb_image') && (
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), clipPath: imageShape }}>
-                    {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                      {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    </div>
                   </div>
                 )}
                 {vis(cfg, 'product2_img') && (
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'product2_img','#5a5050'), clipPath: imageShape }}>
-                    {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${tabletParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                      {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                    </div>
                   </div>
                 )}
               </div>
@@ -145,10 +160,8 @@ export default function FeaturedMoments({ products, settings }: Props) {
       )
     }
 
-    // ── MOBILE: Premium layout with fadeIn + parallax + exitStyle ──
-    const mParallax1 = (scrollY * 0.14).toFixed(1)
-    const mParallax2 = (scrollY * 0.10).toFixed(1)
-    const mParallax3 = (scrollY * 0.18).toFixed(1)
+    // Mobile: scroll outro on content, parallax-only images.
+    const mobileTextStyle: React.CSSProperties = exitStyle
 
     return (
       <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden', borderTop: '1px solid #e8e8e5', padding: '52px 20px 64px' }}>
@@ -156,9 +169,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
         <div style={{ position: 'absolute', left: '10%', top: '-6%', fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'min(88vw,340px)', lineHeight: 0.85, color: 'rgba(0,0,0,0.04)', pointerEvents: 'none', userSelect: 'none' }}>S</div>
 
         <div style={{ position: 'relative' }}>
-          {/* Headline — fadeIn on scroll-in, exitStyle on scroll-out */}
+          {/* Headline */}
           {vis(cfg, 'headline') && (
-            <div style={{ ...fadeIn(progress, 0.0, 0.3), ...exitStyle }}>
+            <div style={{ ...mobileTextStyle }}>
               <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(54px,16vw,80px)', lineHeight: 0.91, letterSpacing: '-0.5px', color: clr(cfg,'headline','#0d0d0d'), margin: '0 0 18px', whiteSpace: 'pre-line' }}>
                 {txt(cfg, 'headline', 'All - about\nmoments ©26')}
               </h2>
@@ -167,20 +180,20 @@ export default function FeaturedMoments({ products, settings }: Props) {
 
           {/* custom_text — body text */}
           {vis(cfg, 'custom_text') && (
-            <div style={{ ...fadeIn(progress, 0.01, 0.28), ...exitStyle, marginBottom: 16 }}>
+            <div style={{ ...mobileTextStyle, marginBottom: 16 }}>
               <p style={{ fontSize: fsize(cfg,'custom_text',13), lineHeight: 1.75, color: clr(cfg,'custom_text','#555'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
                 {txt(cfg, 'custom_text', 'Crafted for the bold.\nWorn by the few.')}
               </p>
             </div>
           )}
 
-          {/* Main image — S-shape parallax (no exitStyle on images) */}
+          {/* Main image */}
           {vis(cfg, 'main_image') && (
             <div
               onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)}
-              style={{ ...fadeIn(progress, 0.02, 0.35), position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${mParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                 {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
               </div>
               {/* White stripe at ~69% like desktop */}
@@ -188,8 +201,8 @@ export default function FeaturedMoments({ products, settings }: Props) {
             </div>
           )}
 
-          {/* Caption + price row — fadeIn + exitStyle on text */}
-          <div style={{ ...fadeIn(progress, 0.08, 0.38), ...exitStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
+          {/* Caption + price row */}
+          <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
             {vis(cfg, 'caption1') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption1','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}
@@ -202,21 +215,21 @@ export default function FeaturedMoments({ products, settings }: Props) {
             )}
           </div>
 
-          {/* Description + thumb row — fadeIn + exitStyle */}
-          <div style={{ ...fadeIn(progress, 0.10, 0.42), ...exitStyle, display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 22 }}>
+          {/* Description + thumb row */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 22 }}>
             {vis(cfg, 'star') && (
-              <div className="animate-spin-slow" style={{ color: clr(cfg,'star',cfg.accentColor), fontSize: 26, lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>
+              <div className="animate-spin-slow" style={{ ...mobileTextStyle, color: clr(cfg,'star',cfg.accentColor), fontSize: 26, lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>
                 {txt(cfg,'star','✦')}
               </div>
             )}
             {vis(cfg, 'description') && (
-              <p style={{ flex: 1, fontSize: 13, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
+              <p style={{ ...mobileTextStyle, flex: 1, fontSize: 13, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
                 {txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}
               </p>
             )}
             {vis(cfg, 'thumb_image') && (
               <div style={{ position: 'relative', width: 72, aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), flexShrink: 0, clipPath: imageShape }}>
-                <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '140%', transform: `translateY(${mParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                 </div>
               </div>
@@ -226,21 +239,21 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {/* Divider like desktop */}
           <div style={{ height: 1, background: '#e0e0dd', margin: '8px 0 20px' }} />
 
-          {/* Product 2 image — parallax (no exitStyle) */}
+          {/* Product 2 image */}
           {vis(cfg, 'product2_img') && (
             <div
               onClick={() => p3?.slug && router.push(`/product/${p3.slug}`)}
-              style={{ ...fadeIn(progress, 0.15, 0.48), position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: clr(cfg,'product2_img','#5a5050'), cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: clr(cfg,'product2_img','#5a5050'), cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '150%', transform: `translateY(${mParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '126%', transform: `translateY(${mobileParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                 {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
               </div>
             </div>
           )}
 
-          {/* Caption2 + price2 row — exitStyle */}
-          <div style={{ ...fadeIn(progress, 0.18, 0.52), ...exitStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
+          {/* Caption2 + price2 row */}
+          <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
             {vis(cfg, 'caption2') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption2','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption2', `©${p3?.name ?? 'International'} - just do it 2026`)}
@@ -253,9 +266,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
             )}
           </div>
 
-          {/* CTA — exitStyle */}
+          {/* CTA */}
           {vis(cfg, 'learn_more') && (
-            <div style={{ ...fadeIn(progress, 0.22, 0.56), ...exitStyle, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.accentColor }} />
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ddddd9' }} />
@@ -317,7 +330,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {/* ── COL 2: Main S-shape image — NO exit style on images ── */}
           <div style={{ position: 'relative', paddingRight: 28, clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)' }}>
             <div style={{ position: 'absolute', left: '5%', top: '2%', width: '82%', height: '92%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
-            <div style={{ ...fadeIn(progress, 0.10, 0.45), position: 'relative', zIndex: 2 }}>
+            <div style={{ position: 'relative', zIndex: 2 }}>
               {/* Slot 1 image — clickable */}
               <div
                 onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)}
@@ -387,7 +400,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               </div>
             )}
             <div style={{ height: 1, background: '#e0e0dd', margin: '20px 0' }} />
-            <div style={fadeIn(progress, 0.25, 0.58)}>
+            <div>
               {/* Slot 3 product2 image — clickable, NO exit style */}
               {vis(cfg, 'product2_img') && (
                 <div
