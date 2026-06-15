@@ -7,6 +7,7 @@ import type { Product, SiteSettings } from '@/types'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { useViewportKind } from '@/lib/useBreakpoint'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -210,7 +211,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                   style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -mLift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.45, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}
                 >
                   {imgSrc
-                    ? <Image src={imgSrc} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
+                    ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 520 : 360 })} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
                     : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 8 }}>{item?.name}</span></div>}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                   {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
@@ -288,7 +289,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                   goTo(i)
                 }
               }} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -lift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
-                {imgSrc ? <Image src={imgSrc} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
+                {imgSrc ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 700 : 480 })} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
                   : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 10 }}>{item?.name}</span></div>}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                 {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}

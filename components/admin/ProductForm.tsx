@@ -5,14 +5,32 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { X, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { uploadProductImage } from '@/lib/db'
 import { getCollectionItems } from '@/lib/collections'
+import { formatProductImageLimit, getOptimizedProductImageUrl, MAX_PRODUCT_IMAGE_BYTES } from '@/lib/productImages'
 import type { Product, Category, ProductColor, SiteSettings } from '@/types'
 
 interface ProductFormProps {
   product?: Product
   categories: Category[]
   settings?: SiteSettings | null
+}
+
+interface SpecificationRow {
+  key: string
+  value: string
+}
+
+function specificationsToRows(specifications: Record<string, string> | null | undefined): SpecificationRow[] {
+  return Object.entries(specifications ?? {}).map(([key, value]) => ({ key, value: String(value ?? '') }))
+}
+
+function rowsToSpecifications(rows: SpecificationRow[]) {
+  return rows.reduce<Record<string, string>>((acc, row) => {
+    const key = row.key.trim()
+    const value = row.value.trim()
+    if (key && value) acc[key] = value
+    return acc
+  }, {})
 }
 
 export default function ProductForm({ product, categories, settings }: ProductFormProps) {
@@ -40,6 +58,9 @@ export default function ProductForm({ product, categories, settings }: ProductFo
   const [sizeInput, setSizeInput] = useState('')
   const [colors, setColors] = useState<ProductColor[]>(product?.colors ?? [])
   const [colorForm, setColorForm] = useState({ name: '', hex: '#000000', price: '' })
+  const [specifications, setSpecifications] = useState<SpecificationRow[]>(() =>
+    specificationsToRows(product?.specifications)
+  )
 
   // ── Read collection tag names dynamically from settings ──
   // Falls back to hardcoded defaults if settings not loaded yet
@@ -59,15 +80,35 @@ export default function ProductForm({ product, categories, settings }: ProductFo
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
     if (!files.length) return
+
+    const oversized = files.find(file => file.size > MAX_PRODUCT_IMAGE_BYTES)
+    if (oversized) {
+      alert(`"${oversized.name}" is too large. Product images must be ${formatProductImageLimit()} or smaller.`)
+      e.target.value = ''
+      return
+    }
+
     setUploading(true)
     try {
       const productId = product?.id ?? `temp-${Date.now()}`
-      const urls = await Promise.all(files.map(f => uploadProductImage(f, productId)))
+      const urls = await Promise.all(files.map(async file => {
+        const body = new FormData()
+        body.append('file', file)
+        body.append('productId', productId)
+
+        const res = await fetch('/api/imagekit/upload', { method: 'POST', body })
+        const payload = await res.json().catch(() => ({}))
+        if (!res.ok || !payload.url) {
+          throw new Error(payload.error ?? 'Image upload failed')
+        }
+        return payload.url as string
+      }))
       setImages(prev => [...prev, ...urls])
-    } catch (err) {
-      alert('Image upload failed. Check Supabase storage settings.')
+    } catch (err: any) {
+      alert(err?.message ?? 'Image upload failed. Check ImageKit settings.')
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -80,6 +121,10 @@ export default function ProductForm({ product, categories, settings }: ProductFo
     if (!colorForm.name) return
     setColors(prev => [...prev, { name: colorForm.name, hex: colorForm.hex, price: colorForm.price ? Number(colorForm.price) : undefined }])
     setColorForm({ name: '', hex: '#000000', price: '' })
+  }
+
+  const addSpecification = () => {
+    setSpecifications(prev => [...prev, { key: '', value: '' }])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,6 +147,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
         images,
         sizes,
         colors,
+        specifications: rowsToSpecifications(specifications),
         updated_at: new Date().toISOString(),
       }
 
@@ -113,6 +159,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
         if (error) throw error
       }
 
+      await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
       router.push('/admin/products')
       router.refresh()
     } catch (err: any) {
@@ -202,6 +249,44 @@ export default function ProductForm({ product, categories, settings }: ProductFo
               ))}
             </div>
           </div>
+
+          {/* Specifications */}
+          <div className="bg-white rounded-2xl p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-condensed font-800 text-lg">Specifications</h2>
+                <p className="text-xs text-[var(--gray-mid)] mt-1">Add product-specific details like fabric, fit, sleeve, or care.</p>
+              </div>
+              <button type="button" onClick={addSpecification} className="px-4 py-2 bg-black text-white rounded-lg text-sm font-600 flex-shrink-0">Add</button>
+            </div>
+            {specifications.length === 0 ? (
+              <p className="text-sm text-[var(--gray-mid)] border border-dashed border-[var(--gray-light)] rounded-xl p-4">No specifications added yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {specifications.map((spec, i) => (
+                  <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                    <input
+                      type="text"
+                      value={spec.key}
+                      onChange={e => setSpecifications(prev => prev.map((row, idx) => idx === i ? { ...row, key: e.target.value } : row))}
+                      className="input"
+                      placeholder="Fabric"
+                    />
+                    <input
+                      type="text"
+                      value={spec.value}
+                      onChange={e => setSpecifications(prev => prev.map((row, idx) => idx === i ? { ...row, value: e.target.value } : row))}
+                      className="input"
+                      placeholder="Cotton"
+                    />
+                    <button type="button" onClick={() => setSpecifications(prev => prev.filter((_, idx) => idx !== i))} className="w-9 h-9 flex items-center justify-center rounded-full border border-[var(--gray-light)] hover:border-black transition-colors">
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right column */}
@@ -213,12 +298,13 @@ export default function ProductForm({ product, categories, settings }: ProductFo
             <label className={`flex flex-col items-center justify-center border-2 border-dashed border-[var(--gray-light)] rounded-xl p-6 cursor-pointer hover:border-black transition-colors ${uploading ? 'opacity-50' : ''}`}>
               <Upload size={20} className="text-[var(--gray-mid)] mb-2" />
               <span className="text-xs text-[var(--gray-mid)] text-center">{uploading ? 'Uploading...' : 'Click to upload images'}</span>
+              <span className="text-[10px] text-[var(--gray-mid)] text-center mt-1">Max {formatProductImageLimit()} per image</span>
               <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} disabled={uploading} />
             </label>
             <div className="grid grid-cols-2 gap-2">
               {images.map((url, i) => (
                 <div key={i} className="relative aspect-square bg-[var(--gray-light)] rounded-lg overflow-hidden group">
-                  <Image src={url} alt="" fill className="object-cover" />
+                  <Image src={getOptimizedProductImageUrl(url, { width: 240 })} alt="" fill className="object-cover" />
                   <button type="button" onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
                   {i === 0 && <span className="absolute bottom-1 left-1 text-[9px] bg-black text-white px-1.5 py-0.5 rounded font-600">MAIN</span>}
                 </div>

@@ -37,16 +37,25 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
 
   const collectionItems = getCollectionItems(settings)
   const activeCollection = findCollectionBySlug(searchParams.collection, collectionItems)
-  const sortSuffix = searchParams.sort ? `&sort=${searchParams.sort}` : ''
 
-  const categoryHref = (slug: string) => `/shop?category=${slug}${sortSuffix}`
-  const collectionHref = (href: string) => `${href}${searchParams.sort ? `&sort=${searchParams.sort}` : ''}`
-  const sortHref = (sort: string) => {
+  const buildHref = (options: { category?: string; collection?: string; sort?: string }) => {
     const params = new URLSearchParams()
-    if (searchParams.category) params.set('category', searchParams.category)
-    if (activeCollection) params.set('collection', activeCollection.slug)
-    params.set('sort', sort)
-    return `/shop?${params.toString()}`
+    if (options.category) params.set('category', options.category)
+    if (options.collection) params.set('collection', options.collection)
+    if (searchParams.search) params.set('search', searchParams.search)
+    if (options.sort && options.sort !== 'newest') params.set('sort', options.sort)
+    const qs = params.toString()
+    return `/shop${qs ? `?${qs}` : ''}`
+  }
+
+  const categoryHref = (slug: string) => buildHref({ category: slug, sort: searchParams.sort })
+  const collectionHref = (slug: string) => buildHref({ collection: slug, sort: searchParams.sort })
+  const sortHref = (sort: string) => {
+    return buildHref({
+      category: searchParams.category,
+      collection: searchParams.category ? undefined : activeCollection?.slug,
+      sort,
+    })
   }
 
   return (
@@ -60,7 +69,7 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
           <ul className="space-y-1.5">
             <li>
               <Link
-                href="/shop"
+                href={buildHref({ sort: searchParams.sort })}
                 className={`text-sm transition-colors ${!searchParams.category && !activeCollection ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
               >
                 All Products
@@ -86,7 +95,7 @@ export default function ShopFilters({ categories, searchParams, settings }: Prop
             {collectionItems.map(col => (
               <li key={col.id}>
                 <Link
-                  href={collectionHref(col.href)}
+                  href={collectionHref(col.slug)}
                   className={`text-sm transition-colors ${activeCollection?.id === col.id ? 'font-700 text-black' : 'text-[var(--gray-dark)] hover:text-black'}`}
                 >
                   {col.label}

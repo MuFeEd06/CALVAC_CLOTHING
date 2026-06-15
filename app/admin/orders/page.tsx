@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { MessageCircle, ChevronDown } from 'lucide-react'
 import { getOrders, updateOrderStatus } from '@/lib/db'
 import { buildWhatsAppMessage, openWhatsApp } from '@/lib/whatsapp'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 import type { Order } from '@/types'
 
 const STATUS_OPTIONS: Order['status'][] = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled']
@@ -117,7 +118,7 @@ export default function AdminOrdersPage() {
                           <div key={i} className="flex items-center gap-3">
                             <div className="w-12 h-14 bg-[var(--gray-light)] flex-shrink-0 rounded overflow-hidden">
                               {item.product_image && (
-                                <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
+                                <img src={getOptimizedProductImageUrl(item.product_image, { width: 140 })} alt={item.product_name} className="w-full h-full object-cover" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">

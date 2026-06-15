@@ -1,4 +1,10 @@
-import { getProducts, getCategories, getSiteSettings } from '@/lib/db'
+import {
+  CATALOG_REVALIDATE_SECONDS,
+  getCachedCategories,
+  getCachedProducts,
+  getCachedSearchProducts,
+  getCachedSiteSettings,
+} from '@/lib/cachedDb'
 import ProductGrid from '@/components/shop/ProductGrid'
 import ShopFilters from '@/components/shop/ShopFilters'
 import MobileShopControls from '@/components/shop/MobileShopControls'
@@ -7,14 +13,17 @@ import { filterProductsByCollection, findCollectionBySlug, getCollectionItems } 
 import type { Product, Category } from '@/types'
 
 interface PageProps {
-  searchParams: { category?: string; collection?: string; sort?: string }
+  searchParams: { category?: string; collection?: string; sort?: string; search?: string }
 }
 
+export const revalidate = CATALOG_REVALIDATE_SECONDS
+
 export default async function ShopPage({ searchParams }: PageProps) {
+  const searchQuery = searchParams.search?.trim() ?? ''
   const [allProducts, categories, settings] = await Promise.all([
-    getProducts({ active: true }).catch(() => []),
-    getCategories().catch(() => []),
-    getSiteSettings().catch(() => null),
+    (searchQuery ? getCachedSearchProducts() : getCachedProducts({ active: true })).catch(() => []),
+    getCachedCategories().catch(() => []),
+    getCachedSiteSettings().catch(() => null),
   ])
 
   // ── Build display categories (admin _categoryItems takes priority) ──
@@ -51,6 +60,20 @@ export default async function ShopPage({ searchParams }: PageProps) {
     products = filterProductsByCollection(products, searchParams.collection, collectionItems)
   }
 
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase()
+    products = products.filter(p => {
+      const haystack = [
+        p.name,
+        p.description,
+        p.category?.name,
+        p.category?.slug,
+        p.collection_tag,
+      ].filter(Boolean).join(' ').toLowerCase()
+      return haystack.includes(q)
+    })
+  }
+
   // ── Sort ──
   if (searchParams.sort === 'price-asc') {
     products = [...products].sort((a, b) => a.price - b.price)
@@ -60,11 +83,12 @@ export default async function ShopPage({ searchParams }: PageProps) {
   // default: newest (already ordered by created_at desc from DB)
 
   const activeCollection = findCollectionBySlug(searchParams.collection, collectionItems)
-  const activeLabel = activeCollection
+  const filterLabel = activeCollection
     ? activeCollection.label
     : searchParams.category
       ? displayCats.find(c => c.slug === searchParams.category)?.name ?? searchParams.category
       : 'All Products'
+  const activeLabel = searchQuery ? `Search: "${searchQuery}"` : filterLabel
 
   return (
     <>

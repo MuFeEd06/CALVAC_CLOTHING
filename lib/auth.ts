@@ -40,16 +40,21 @@ export function isAdminUser(user: Pick<User, 'email' | 'app_metadata'> | null | 
 
   const metadata = user.app_metadata as Record<string, unknown> | undefined
   const roles = metadata?.roles
+  const role = typeof metadata?.role === 'string' ? metadata.role.toLowerCase() : metadata?.role
+  const isAdminFlag = metadata?.is_admin
+  const adminFlag = metadata?.admin
   const hasAdminRole =
-    metadata?.role === 'admin' ||
-    metadata?.is_admin === true ||
-    metadata?.admin === true ||
-    (Array.isArray(roles) && roles.includes('admin'))
+    role === 'admin' ||
+    isAdminFlag === true ||
+    (typeof isAdminFlag === 'string' && isAdminFlag.toLowerCase() === 'true') ||
+    adminFlag === true ||
+    (typeof adminFlag === 'string' && adminFlag.toLowerCase() === 'true') ||
+    (Array.isArray(roles) && roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin'))
 
   if (hasAdminRole) return true
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? '')
-    .split(',')
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(/[\s,;]+/)
     .map(email => email.trim().toLowerCase())
     .filter(Boolean)
 

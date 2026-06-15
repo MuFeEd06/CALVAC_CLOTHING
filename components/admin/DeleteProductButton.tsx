@@ -14,6 +14,7 @@ export default function DeleteProductButton({ productId, productName }: { produc
     setLoading(true)
     const { error } = await supabase.from('products').delete().eq('id', productId)
     if (error) { alert('Failed to delete'); setLoading(false); return }
+    await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
     router.refresh()
   }
 

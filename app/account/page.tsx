@@ -1,10 +1,13 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getUser, getUserProfile } from '@/lib/auth'
 import { createSupabaseServer } from '@/lib/auth'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { getSiteSettings } from '@/lib/db'
+import { getCategories, getSiteSettings } from '@/lib/db'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'My Account — CALVAC' }
@@ -13,9 +16,10 @@ export default async function AccountPage() {
   const user = await getUser()
   if (!user) redirect('/login?redirect=/account')
 
-  const [profile, settings] = await Promise.all([
+  const [profile, settings, categories] = await Promise.all([
     getUserProfile(user.id),
     getSiteSettings().catch(() => null),
+    getCategories().catch(() => []),
   ])
 
   const supabase = createSupabaseServer()
@@ -192,7 +196,7 @@ export default async function AccountPage() {
           }
         `}</style>
       </main>
-      <Footer settings={settings} />
+      <Footer settings={settings} categories={categories} />
     </>
   )
 }

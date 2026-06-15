@@ -1,4 +1,5 @@
 import { hasSupabaseConfig, supabase } from './supabase'
+import { formatProductImageLimit, MAX_PRODUCT_IMAGE_BYTES } from './productImages'
 import type { Product, Category, Order, SiteSettings } from '@/types'
 
 // ─── PRODUCTS ───────────────────────────────────────────────
@@ -119,15 +120,20 @@ export function getImageUrl(path: string) {
 }
 
 export async function uploadProductImage(file: File, productId: string) {
-  if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
+  if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
+    throw new Error(`Product images must be ${formatProductImageLimit()} or smaller.`)
+  }
 
-  const ext = file.name.split('.').pop()
-  const path = `${productId}/${Date.now()}.${ext}`
-  const { error } = await supabase.storage
-    .from('product-images')
-    .upload(path, file, { upsert: true })
-  if (error) throw error
-  return getImageUrl(path)
+  const body = new FormData()
+  body.append('file', file)
+  body.append('productId', productId)
+
+  const res = await fetch('/api/imagekit/upload', { method: 'POST', body })
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok || !payload.url) {
+    throw new Error(payload.error ?? 'Image upload failed')
+  }
+  return payload.url as string
 }
 
 export async function deleteProductImage(path: string) {

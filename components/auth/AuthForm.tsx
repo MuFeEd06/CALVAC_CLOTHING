@@ -11,24 +11,38 @@ interface Props { mode: Mode }
 export default function AuthForm({ mode }: Props) {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const redirect     = searchParams.get('redirect') ?? '/'
+  const rawRedirect  = searchParams.get('redirect') ?? '/'
+  const redirect     = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/'
+  const redirectQuery = redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : ''
 
   const [fullName, setFullName] = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
+  const [notice,   setNotice]   = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setNotice('')
     try {
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } })
+        const emailRedirectTo = typeof window !== 'undefined' ? `${window.location.origin}${redirect}` : undefined
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullName },
+            emailRedirectTo,
+          },
+        })
         if (error) throw error
-        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password })
-        if (signInErr) throw signInErr
+        if (!data.session) {
+          setNotice('Check your email to confirm your account, then sign in. If custom SMTP is enabled in Supabase, this email will use that sender.')
+          return
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
@@ -36,7 +50,8 @@ export default function AuthForm({ mode }: Props) {
       router.push(redirect)
       router.refresh()
     } catch (err: any) {
-      setError(err.message ?? 'Something went wrong')
+      const message = err.message ?? 'Something went wrong'
+      setError(message.toLowerCase().includes('email not confirmed') ? 'Please confirm your email before signing in.' : message)
     } finally {
       setLoading(false)
     }
@@ -117,6 +132,15 @@ export default function AuthForm({ mode }: Props) {
                 {error}
               </div>
             )}
+            {notice && (
+              <div style={{
+                background: '#f4fbf6', border: '1px solid #cdebd5',
+                borderRadius: 10, padding: '11px 14px', marginBottom: 18,
+                fontSize: 13, color: '#166534', lineHeight: 1.5,
+              }}>
+                {notice}
+              </div>
+            )}
 
             <button
               type="submit"
@@ -139,13 +163,13 @@ export default function AuthForm({ mode }: Props) {
           <div style={{ marginTop: 22, textAlign: 'center', fontSize: 14, color: '#888' }}>
             {mode === 'login' ? (
               <>Don't have an account?{' '}
-                <Link href={`/signup${redirect !== '/' ? `?redirect=${redirect}` : ''}`} style={{ color: '#f04e0f', fontWeight: 600, textDecoration: 'none' }}>
+                <Link href={`/signup${redirectQuery}`} style={{ color: '#f04e0f', fontWeight: 600, textDecoration: 'none' }}>
                   Sign up
                 </Link>
               </>
             ) : (
               <>Already have an account?{' '}
-                <Link href={`/login${redirect !== '/' ? `?redirect=${redirect}` : ''}`} style={{ color: '#f04e0f', fontWeight: 600, textDecoration: 'none' }}>
+                <Link href={`/login${redirectQuery}`} style={{ color: '#f04e0f', fontWeight: 600, textDecoration: 'none' }}>
                   Sign in
                 </Link>
               </>

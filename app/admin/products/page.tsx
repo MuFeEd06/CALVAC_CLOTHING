@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { getProducts, getCategories } from '@/lib/db'
 import DeleteProductButton from '@/components/admin/DeleteProductButton'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 
 export default async function AdminProductsPage() {
   const [products, categories] = await Promise.all([
@@ -70,7 +71,7 @@ export default async function AdminProductsPage() {
                     <div className="w-12 h-14 bg-[var(--gray-light)] flex-shrink-0 overflow-hidden rounded">
                       {product.images[0] ? (
                         <Image
-                          src={product.images[0]}
+                          src={getOptimizedProductImageUrl(product.images[0], { width: 160 })}
                           alt={product.name}
                           width={48}
                           height={56}

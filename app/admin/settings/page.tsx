@@ -10,6 +10,12 @@ import {
   HERO_DEFAULTS, FEATURED_DEFAULTS, CATEGORIES_DEFAULTS,
   CAROUSEL_DEFAULTS, COLLECTIONS_DEFAULTS, FOOTER_DEFAULTS,
 } from '@/lib/pageDefaults'
+import { clampParallaxSpeed, DEFAULT_PAYMENT_METHODS, getParallaxSpeed, getPaymentMethodSettings, getPolicySettings } from '@/lib/siteSettings'
+import { getCollectionItems } from '@/lib/collections'
+import { DEFAULT_FEATURED_DROP_REDIRECT, getFeaturedDropRedirect } from '@/lib/featuredDropRedirect'
+import type { FeaturedDropRedirect } from '@/lib/featuredDropRedirect'
+import type { Category, PaymentMethodSettings, PolicyPageContent } from '@/types'
+import type { PolicyKey } from '@/lib/siteSettings'
 
 // ─── Types ────────────────────────────────────────────────────
 type PageId = 'hero' | 'featured_moments' | 'categories' | 'carousel' | 'collections' | 'footer'
@@ -1428,6 +1434,15 @@ export default function AdminSettingsPage() {
   const [whatsapp,     setWhatsapp]     = useState('')
   const [announcement, setAnnouncement] = useState('Free Shipping on Orders Above ₹2000 · New Drop Every Friday')
   const [instagram,    setInstagram]    = useState('')
+  const [contactLocation, setContactLocation] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactPhone, setContactPhone] = useState('')
+  const [openTime, setOpenTime] = useState('')
+  const [parallaxSpeed, setParallaxSpeed] = useState(1)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSettings>({ ...DEFAULT_PAYMENT_METHODS })
+  const [policies, setPolicies] = useState<Record<PolicyKey, PolicyPageContent>>(getPolicySettings(null))
+  const [featuredDropRedirect, setFeaturedDropRedirect] = useState<FeaturedDropRedirect>(DEFAULT_FEATURED_DROP_REDIRECT)
+  const [liveCategories, setLiveCategories] = useState<Category[]>([])
 
   // ── Load from Supabase ──
   useEffect(() => {
@@ -1437,6 +1452,14 @@ export default function AdminSettingsPage() {
       setWhatsapp(data.whatsapp_number ?? '')
       setAnnouncement(data.announcement_text ?? '')
       setInstagram(data.instagram_url ?? '')
+      setContactLocation(data.contact_location ?? '')
+      setContactEmail(data.contact_email ?? '')
+      setContactPhone(data.contact_phone ?? '')
+      setOpenTime(data.open_time ?? '')
+      setParallaxSpeed(getParallaxSpeed(data as any))
+      setPaymentMethods(getPaymentMethodSettings(data as any))
+      setPolicies(getPolicySettings(data as any))
+      setFeaturedDropRedirect(getFeaturedDropRedirect(data as any))
       if (data.page_configs) {
         try {
           const pc = JSON.parse(data.page_configs)
@@ -1447,6 +1470,9 @@ export default function AdminSettingsPage() {
           if (pc?._mobileSections)  setMobileSections(prev => ({ ...prev, ...pc._mobileSections }))
         } catch {}
       }
+    })
+    supabase.from('categories').select('*').order('name').then(({ data }) => {
+      if (data) setLiveCategories(data as Category[])
     })
   }, [])
 
@@ -1525,6 +1551,9 @@ export default function AdminSettingsPage() {
   const updateMobileEl = (elId: string, patch: Partial<MobileElement>) =>
     setMobileSections(s => ({ ...s, [activeMobilePage]: { ...s[activeMobilePage], elements: s[activeMobilePage].elements.map(e => e.id === elId ? { ...e, ...patch } : e) } }))
 
+  const updatePolicy = (key: PolicyKey, patch: Partial<PolicyPageContent>) =>
+    setPolicies(current => ({ ...current, [key]: { ...current[key], ...patch } }))
+
   const handleMobileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, elId: string) => {
     const file = e.target.files?.[0]; if (!file) return
     setUploadingMobileImg(true)
@@ -1547,8 +1576,22 @@ export default function AdminSettingsPage() {
       await supabase.from('site_settings').update({
         brand_name: brandName, whatsapp_number: whatsapp,
         announcement_text: announcement, instagram_url: instagram,
+        contact_location: contactLocation,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        open_time: openTime,
+        policies,
         hero_config: JSON.stringify(configs.hero),
-        page_configs: JSON.stringify({ ...configs, _tabletConfigs: tabletConfigs, _mobileConfigs: mobileConfigs, _categoryItems: categoryItems, _mobileSections: mobileSections }),
+        page_configs: JSON.stringify({
+          ...configs,
+          _tabletConfigs: tabletConfigs,
+          _mobileConfigs: mobileConfigs,
+          _categoryItems: categoryItems,
+          _mobileSections: mobileSections,
+          _visualSettings: { parallaxSpeed: clampParallaxSpeed(parallaxSpeed) },
+          _checkoutSettings: { paymentMethods },
+          _featuredDropRedirect: featuredDropRedirect,
+        }),
         updated_at: new Date().toISOString(),
       }).eq('id', row.id)
 
@@ -1580,6 +1623,36 @@ export default function AdminSettingsPage() {
 
   const desktopPages: PageId[] = ['hero', 'featured_moments', 'categories', 'carousel', 'collections', 'footer']
   const mobilePages: MobilePageId[] = ['mobile_hero', 'mobile_featured', 'mobile_categories', 'mobile_carousel', 'mobile_collections', 'mobile_footer']
+
+  const slugifyAdminValue = (value: string) =>
+    value.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+
+  const categoryRedirectOptions =
+    liveCategories.filter(cat => cat.is_active !== false).length > 0
+      ? liveCategories
+          .filter(cat => cat.is_active !== false)
+          .map(cat => ({ label: cat.name, slug: cat.slug }))
+      : categoryItems
+          .filter(cat => cat.visible !== false)
+          .map(cat => ({ label: cat.name.charAt(0).toUpperCase() + cat.name.slice(1), slug: slugifyAdminValue(cat.name) }))
+          .filter(cat => cat.slug)
+
+  const collectionRedirectOptions = getCollectionItems({
+    page_configs: JSON.stringify({ collections: configs.collections }),
+  } as any)
+
+  const redirectSelectValue =
+    featuredDropRedirect.type === 'all'
+      ? 'all:'
+      : `${featuredDropRedirect.type}:${featuredDropRedirect.value ?? ''}`
+
+  const updateFeaturedDropRedirect = (value: string) => {
+    const [type, ...rest] = value.split(':')
+    const target = rest.join(':')
+    if (type === 'all' || type === 'category' || type === 'collection' || type === 'custom') {
+      setFeaturedDropRedirect({ type, value: target })
+    }
+  }
 
   // ── Shared sidebar button style ──
   const sideBtn = (active: boolean): React.CSSProperties => ({
@@ -2044,6 +2117,111 @@ export default function AdminSettingsPage() {
               <Field label="Brand Name"       value={brandName} onChange={setBrandName} />
               <Field label="WhatsApp Number"  value={whatsapp}  onChange={setWhatsapp} placeholder="919876543210" hint="Country code + number, no + sign" />
               <Field label="Instagram URL"    value={instagram} onChange={setInstagram} placeholder="https://instagram.com/calvac" />
+              <Field label="Contact Location" value={contactLocation} onChange={setContactLocation} multiline placeholder="Your Store Address / City, State" />
+              <Field label="Contact Email"    value={contactEmail} onChange={setContactEmail} placeholder="hello@calvac.store" />
+              <Field label="Contact Phone"    value={contactPhone} onChange={setContactPhone} placeholder="+91 98765 43210" hint="Footer uses WhatsApp number if this is empty." />
+              <Field label="Open Time"        value={openTime} onChange={setOpenTime} placeholder="08.00 - 11.00 pm" />
+
+              <div style={{ marginTop: 8, marginBottom: 24 }}>
+                <label style={lbl10}>Parallax Speed</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={parallaxSpeed}
+                    onChange={e => setParallaxSpeed(clampParallaxSpeed(e.target.value))}
+                    style={{ flex: 1, accentColor: '#0d0d0d' }}
+                  />
+                  <span style={{ minWidth: 38, textAlign: 'right', fontFamily: 'Barlow,sans-serif', fontWeight: 700, fontSize: 13 }}>
+                    {parallaxSpeed.toFixed(1)}x
+                  </span>
+                </div>
+                <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>0 disables parallax movement. 1 keeps the current default speed.</p>
+              </div>
+
+              <div style={{ borderTop: '1px solid #e8e8e5', paddingTop: 22 }}>
+                <label style={lbl10}>Checkout Payment Methods</label>
+                {([
+                  ['whatsapp', 'Order via WhatsApp'],
+                  ['cod', 'Cash on Delivery'],
+                  ['razorpay', 'Pay Online / Razorpay'],
+                ] as const).map(([method, label]) => (
+                  <label key={method} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '10px 0', borderBottom: '1px solid #f2f2ef', cursor: 'pointer' }}>
+                    <span style={{ fontFamily: 'Barlow,sans-serif', fontSize: 13, fontWeight: 600, color: '#0d0d0d' }}>{label}</span>
+                    <input
+                      type="checkbox"
+                      checked={paymentMethods[method]}
+                      onChange={e => setPaymentMethods(current => ({ ...current, [method]: e.target.checked }))}
+                      style={{ width: 18, height: 18, accentColor: '#0d0d0d', cursor: 'pointer' }}
+                    />
+                  </label>
+                ))}
+                <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>Disabled methods remain visible at checkout with a Currently unavailable overlay.</p>
+              </div>
+
+              <div style={{ borderTop: '1px solid #e8e8e5', paddingTop: 22, marginTop: 22 }}>
+                <label style={lbl10}>Featured Drop Redirect</label>
+                <select
+                  value={redirectSelectValue}
+                  onChange={e => updateFeaturedDropRedirect(e.target.value)}
+                  style={inputS}
+                >
+                  <option value="all:">All products</option>
+                  {categoryRedirectOptions.length > 0 && (
+                    <optgroup label="Categories">
+                      {categoryRedirectOptions.map(cat => (
+                        <option key={cat.slug} value={`category:${cat.slug}`}>{cat.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {collectionRedirectOptions.length > 0 && (
+                    <optgroup label="Collections">
+                      {collectionRedirectOptions.map(collection => (
+                        <option key={collection.slug} value={`collection:${collection.slug}`}>{collection.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  <option value={featuredDropRedirect.type === 'custom' ? redirectSelectValue : 'custom:'}>Custom internal URL</option>
+                </select>
+                {featuredDropRedirect.type === 'custom' && (
+                  <Field
+                    label="Custom URL"
+                    value={featuredDropRedirect.value ?? ''}
+                    onChange={value => setFeaturedDropRedirect({ type: 'custom', value })}
+                    placeholder="/shop?sort=price-desc"
+                    hint="Use internal paths only, for example /shop or /shop?collection=seasonal-collections-2026."
+                  />
+                )}
+                <p style={{ fontSize: 11, color: '#aaa', marginTop: 8 }}>Used by the hero Featured Drop card and Shop Now offer button. Deleted targets fall back to All products.</p>
+              </div>
+            </div>
+
+            <div className="admin-settings-form-card" style={{ maxWidth: 720, background: '#fff', borderRadius: 16, padding: 28, marginTop: 18 }}>
+              <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 22, marginBottom: 8 }}>Policy Pages</h2>
+              <p style={{ fontSize: 12, color: '#aaa', marginBottom: 22 }}>Shown on Privacy, Return, and Shipping policy pages.</p>
+              {([
+                ['privacy', 'Privacy Policy'],
+                ['return', 'Return Policy'],
+                ['shipping', 'Shipping Policy'],
+              ] as const).map(([key, label]) => (
+                <div key={key} style={{ borderTop: '1px solid #e8e8e5', paddingTop: 20, marginTop: 20 }}>
+                  <h3 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: 18, margin: '0 0 16px' }}>{label}</h3>
+                  <Field label="Page Title" value={policies[key].title} onChange={value => updatePolicy(key, { title: value })} />
+                  <Field label="Last Updated Text" value={policies[key].lastUpdated ?? ''} onChange={value => updatePolicy(key, { lastUpdated: value })} placeholder="Last updated: June 2026" />
+                  <div style={{ marginBottom: 20 }}>
+                    <label style={lbl10}>Body Content</label>
+                    <textarea
+                      value={policies[key].body}
+                      onChange={e => updatePolicy(key, { body: e.target.value })}
+                      rows={8}
+                      style={{ ...inputS, resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                    <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>Use blank lines to separate paragraphs.</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

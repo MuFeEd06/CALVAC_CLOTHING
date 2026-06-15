@@ -6,6 +6,7 @@ import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 
 interface Props { open: boolean; onClose: () => void }
 
@@ -100,7 +101,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                   <div style={{ width: 68, height: 80, borderRadius: 10, overflow: 'hidden', background: '#f5f5f3', flexShrink: 0 }}>
                     {item.product.images[0] && (
                       <Image
-                        src={item.product.images[0]}
+                        src={getOptimizedProductImageUrl(item.product.images[0], { width: 160 })}
                         alt={item.product.name}
                         width={68} height={80}
                         style={{ objectFit: 'cover', width: '100%', height: '100%' }}

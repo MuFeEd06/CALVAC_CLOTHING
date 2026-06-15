@@ -13,6 +13,7 @@ interface Props {
   height?: number  // height as % of section height
   zoom?: number    // scale factor, default 1.0 (100%)
   objectPosition?: string // e.g. 'top center', 'center', '50% 20%'
+  parallaxSpeed?: number
 }
 
 export default function HeroModelParallax({
@@ -24,6 +25,7 @@ export default function HeroModelParallax({
   height = 100,
   zoom = 1,
   objectPosition = 'top center',
+  parallaxSpeed = 1,
 }: Props) {
   const [scrollY, setScrollY] = useState(0)
 
@@ -33,7 +35,8 @@ export default function HeroModelParallax({
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const parallaxY = (scrollY * 0.15).toFixed(1)
+  const speed = Math.min(2, Math.max(0, parallaxSpeed))
+  const parallaxY = (scrollY * 0.15 * speed).toFixed(1)
 
   return (
     <div style={{

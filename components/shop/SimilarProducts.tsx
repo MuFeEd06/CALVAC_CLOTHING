@@ -1,4 +1,4 @@
-import { getProducts } from '@/lib/db'
+import { getCachedProducts } from '@/lib/cachedDb'
 import ProductCard from '@/components/shop/ProductCard'
 import type { Product } from '@/types'
 
@@ -9,7 +9,7 @@ interface Props {
 export default async function SimilarProducts({ currentProductId }: Props) {
   let allProducts: Product[] = []
   try {
-    allProducts = await getProducts({ active: true })
+    allProducts = await getCachedProducts({ active: true })
   } catch {
     return null
   }

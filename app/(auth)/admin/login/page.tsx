@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { useRouter } from 'next/navigation'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -10,7 +9,6 @@ export default function AdminLoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321'
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? 'supabase-anon-key-placeholder'
 
@@ -27,7 +25,8 @@ export default function AdminLoginPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error || !data.session) {
-      setError(error?.message ?? 'Invalid credentials. Try again.')
+      const message = error?.message ?? 'Invalid credentials. Try again.'
+      setError(message.toLowerCase().includes('email not confirmed') ? 'Please confirm this admin email before signing in.' : message)
       setLoading(false)
       return
     }
@@ -64,6 +63,7 @@ export default function AdminLoginPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
+              autoComplete="email"
               placeholder="admin@calvac.com"
               style={{
                 width: '100%', background: 'rgba(255,255,255,0.06)',
@@ -84,6 +84,7 @@ export default function AdminLoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               style={{
                 width: '100%', background: 'rgba(255,255,255,0.06)',

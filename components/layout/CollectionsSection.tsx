@@ -8,6 +8,8 @@ import { getCollectionHref } from '@/lib/collections'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { clampedParallax, imageIntroStyle, usePrefersReducedMotion } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
+import { getParallaxSpeed } from '@/lib/siteSettings'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -49,15 +51,16 @@ export default function CollectionsSection({ products, settings }: Props) {
   const viewport = useViewportKind()
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const cfg = mergeDeviceConfig(settings ?? null, 'collections', DEFAULTS, viewport)
+  const parallaxSpeed = getParallaxSpeed(settings ?? null)
 
-  const parallax1 = (scrollY * 0.16).toFixed(1)
-  const mobileParallax1 = clampedParallax(scrollY, 0.06, 34)
-  const mobileParallax2 = clampedParallax(scrollY, 0.035, 16)
-  const tabletParallax1 = clampedParallax(scrollY, 0.07, 36)
-  const tabletParallax2 = clampedParallax(scrollY, 0.04, 18)
+  const parallax1 = (scrollY * 0.16 * parallaxSpeed).toFixed(1)
+  const mobileParallax1 = clampedParallax(scrollY, 0.06 * parallaxSpeed, 34 * parallaxSpeed)
+  const mobileParallax2 = clampedParallax(scrollY, 0.035 * parallaxSpeed, 16 * parallaxSpeed)
+  const tabletParallax1 = clampedParallax(scrollY, 0.07 * parallaxSpeed, 36 * parallaxSpeed)
+  const tabletParallax2 = clampedParallax(scrollY, 0.04 * parallaxSpeed, 18 * parallaxSpeed)
   const imageIntro = (start: number, end: number) => imageIntroStyle(progress, start, end, prefersReducedMotion)
-  const img1 = imgUrl(cfg, 'model_image') || products[0]?.images?.[0] || ''
-  const featuredImg = imgUrl(cfg, 'featured_img') || products[2]?.images?.[0] || ''
+  const img1 = getOptimizedProductImageUrl(imgUrl(cfg, 'model_image') || products[0]?.images?.[0] || '', { width: 900 })
+  const featuredImg = getOptimizedProductImageUrl(imgUrl(cfg, 'featured_img') || products[2]?.images?.[0] || '', { width: 320 })
   const collectionRows = [
     { id: 'col1', def: 'Everyday Essentials 2026' },
     { id: 'col2', def: 'Timeless Classics 2026' },

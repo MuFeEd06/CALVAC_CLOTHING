@@ -24,6 +24,7 @@ interface Props {
     category?: string
     collection?: string
     sort?: string
+    search?: string
   }
 }
 
@@ -53,15 +54,11 @@ export default function MobileShopControls({ categories, collections, searchPara
     const params = new URLSearchParams()
     if (options.category) params.set('category', options.category)
     if (options.collection) params.set('collection', options.collection)
+    if (searchParams.search) params.set('search', searchParams.search)
     const sort = options.sort
     if (sort && sort !== 'newest') params.set('sort', sort)
     const qs = params.toString()
     return `/shop${qs ? `?${qs}` : ''}`
-  }
-
-  const withCurrentSort = (href: string) => {
-    if (!searchParams.sort || searchParams.sort === 'newest') return href
-    return `${href}&sort=${searchParams.sort}`
   }
 
   return (
@@ -216,7 +213,7 @@ export default function MobileShopControls({ categories, collections, searchPara
                 {collections.map(col => (
                   <Link
                     key={col.id}
-                    href={withCurrentSort(col.href)}
+                    href={buildHref({ collection: col.slug, sort: searchParams.sort })}
                     onClick={() => setFilterOpen(false)}
                     className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-500 transition-colors ${
                       activeCollection?.id === col.id

@@ -1,3 +1,6 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -5,7 +8,8 @@ import { getUser } from '@/lib/auth'
 import { createSupabaseServer } from '@/lib/auth'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { getSiteSettings } from '@/lib/db'
+import { getCategories, getSiteSettings } from '@/lib/db'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'My Orders — CALVAC' }
@@ -30,8 +34,9 @@ export default async function OrdersPage() {
   const user = await getUser()
   if (!user) redirect('/login?redirect=/account/orders')
 
-  const [settings, supabase] = await Promise.all([
+  const [settings, categories, supabase] = await Promise.all([
     getSiteSettings().catch(() => null),
+    getCategories().catch(() => []),
     Promise.resolve(createSupabaseServer()),
   ])
 
@@ -92,7 +97,7 @@ export default async function OrdersPage() {
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ width: 52, height: 60, borderRadius: 8, overflow: 'hidden', background: '#f5f5f3', flexShrink: 0 }}>
                             {item.product_image && (
-                              <Image src={item.product_image} alt={item.product_name} width={52} height={60} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                              <Image src={getOptimizedProductImageUrl(item.product_image, { width: 140 })} alt={item.product_name} width={52} height={60} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
                             )}
                           </div>
                           <div style={{ flex: 1 }}>
@@ -125,7 +130,7 @@ export default async function OrdersPage() {
           )}
         </div>
       </main>
-      <Footer settings={settings} />
+      <Footer settings={settings} categories={categories} />
     </>
   )
 }

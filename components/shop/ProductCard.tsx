@@ -2,6 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import { getProductRatingSeed } from '@/lib/productRating'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -13,6 +15,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
   const discount = product.compare_price
     ? Math.round(((product.compare_price - product.price) / product.compare_price) * 100)
     : null
+  const rating = getProductRatingSeed(product.id || product.slug)
 
   return (
     <Link
@@ -24,7 +27,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
       <div className="relative overflow-hidden bg-[var(--gray-light)] aspect-[3/4]">
         {product.images[0] ? (
           <Image
-            src={product.images[0]}
+            src={getOptimizedProductImageUrl(product.images[0], { width: 720 })}
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -64,6 +67,12 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
           {product.category?.name}
         </p>
         <h3 className="font-500 text-[13px] md:text-sm leading-snug line-clamp-2">{product.name}</h3>
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="text-[var(--orange)] text-[10px] leading-none">★★★★★</span>
+          <span className="text-[10px] text-[var(--gray-mid)] font-600">
+            {rating.rating.toFixed(1)} ({rating.reviewCount.toLocaleString('en-IN')})
+          </span>
+        </div>
         <div className="flex items-baseline gap-1.5 mt-1 md:mt-1.5">
           <span className="font-condensed font-700 text-base md:text-lg">
             ₹{product.price.toLocaleString('en-IN')}

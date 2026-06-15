@@ -8,6 +8,7 @@ import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMerged
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { CATEGORIES_DEFAULTS } from '@/lib/pageDefaults'
 import { useViewportKind } from '@/lib/useBreakpoint'
+import { getParallaxSpeed } from '@/lib/siteSettings'
 
 interface Props { categories: Category[]; settings?: SiteSettings | null }
 
@@ -62,7 +63,8 @@ export default function CategoryList({ categories, settings }: Props) {
   const exitStyle = scrollExitStyle(scrollY, txCfg)
   const [activeIdx, setActiveIdx] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
-  const parallaxY = (scrollY * 0.2).toFixed(1)
+  const parallaxSpeed = getParallaxSpeed(settings ?? null)
+  const parallaxY = (scrollY * 0.2 * parallaxSpeed).toFixed(1)
   const description = txt(cfg, 'description', "Every piece carries rhythm beyond clothing — it's motion and meaning where street energy meets.")
 
   // ── FIX 1: Parse category items from admin-managed page_configs ──

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
 import CartDrawer from './CartDrawer'
 import type { SiteSettings } from '@/types'
@@ -15,13 +16,17 @@ const DEFAULT_LINKS = [
   { href: '/shop?category=tees',        label: 'Tees' },
   { href: '/shop?category=pants',       label: 'Pants' },
   { href: '/shop?category=accessories', label: 'Accessories' },
+  { href: '/contact',                   label: 'Contact' },
 ]
 
 export default function Navbar({ settings }: Props) {
   const [scrolled, setScrolled]   = useState(false)
   const [menuOpen, setMenuOpen]   = useState(false)
   const [cartOpen, setCartOpen]   = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const { totalItems } = useCart()
+  const router = useRouter()
 
   const announcement = settings?.announcement_text ?? ''
   const ANNOUNCE_H   = announcement ? 36 : 0
@@ -52,11 +57,19 @@ export default function Navbar({ settings }: Props) {
           href: `/shop?category=${encodeURIComponent(c.name.toLowerCase().replace(/\s+/g, '-'))}`,
           label: c.name.charAt(0).toUpperCase() + c.name.slice(1),
         }))
-        return [{ href: '/shop', label: 'Shop' }, ...cats]
+        return [{ href: '/shop', label: 'Shop' }, ...cats, { href: '/contact', label: 'Contact' }]
       }
     } catch {}
     return DEFAULT_LINKS
   })()
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const query = searchQuery.trim()
+    router.push(query ? `/shop?search=${encodeURIComponent(query)}` : '/shop')
+    setSearchOpen(false)
+    setMenuOpen(false)
+  }
 
   const btnBase: React.CSSProperties = {
     border: '1.5px solid #0d0d0d', borderRadius: '50%',
@@ -114,6 +127,7 @@ export default function Navbar({ settings }: Props) {
         <div style={{ display: 'flex', gap: 'clamp(6px,1.5vw,12px)', alignItems: 'center' }}>
           {/* Search — hide on very small screens */}
           <button
+            onClick={() => setSearchOpen(open => !open)}
             style={{ ...btnBase, width: 'clamp(34px,4.5vw,40px)', height: 'clamp(34px,4.5vw,40px)', display: 'none' }}
             className="sm-search-btn"
             aria-label="Search"
@@ -160,6 +174,45 @@ export default function Navbar({ settings }: Props) {
         </div>
       </nav>
 
+      {searchOpen && (
+        <form
+          onSubmit={submitSearch}
+          style={{
+            position: 'fixed',
+            top: `calc(${ANNOUNCE_H}px + 68px)`,
+            right: 'clamp(16px,3.5vw,48px)',
+            zIndex: 57,
+            width: 'min(360px, calc(100vw - 32px))',
+            background: '#f5f5f3',
+            border: '1px solid rgba(0,0,0,0.12)',
+            boxShadow: '0 18px 50px rgba(0,0,0,0.12)',
+            padding: 10,
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0,1fr) auto',
+            gap: 8,
+          }}
+        >
+          <input
+            autoFocus
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search products"
+            style={{
+              minWidth: 0,
+              border: '1px solid #d8d8d4',
+              background: '#fff',
+              padding: '10px 12px',
+              fontSize: 13,
+              outline: 'none',
+              fontFamily: 'Barlow,sans-serif',
+            }}
+          />
+          <button type="submit" style={{ border: 'none', background: '#0d0d0d', color: '#fff', padding: '0 16px', fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Barlow,sans-serif' }}>
+            Search
+          </button>
+        </form>
+      )}
+
       {/* ── Backdrop ── */}
       <div
         onClick={() => setMenuOpen(false)}
@@ -196,6 +249,23 @@ export default function Navbar({ settings }: Props) {
         </div>
 
         <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 24px' }} />
+
+        <form onSubmit={submitSearch} style={{ padding: '18px 24px 10px' }}>
+          <label style={{ display: 'block', fontSize: 9, letterSpacing: '3px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+            Search
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 42px', border: '1px solid rgba(255,255,255,0.14)' }}>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Jacket, tee, cargo"
+              style={{ minWidth: 0, border: 'none', background: 'rgba(255,255,255,0.05)', color: '#fff', padding: '12px 13px', fontSize: 13, outline: 'none', fontFamily: 'Barlow,sans-serif' }}
+            />
+            <button type="submit" aria-label="Search products" style={{ border: 'none', borderLeft: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer' }}>
+              →
+            </button>
+          </div>
+        </form>
 
         <nav style={{ padding: '8px 0', flex: 1 }}>
           {navLinks.map((link, i) => (

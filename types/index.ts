@@ -3,6 +3,7 @@ export type Category = {
   name: string
   slug: string
   description: string | null
+  is_active?: boolean | null
   created_at: string
 }
 
@@ -24,6 +25,7 @@ export type Product = {
   carousel_slot: number | null
   featured_moment_slot: number | null
   collection_tag: string | null
+  specifications: Record<string, string> | null
   created_at: string
   updated_at: string
 }
@@ -52,8 +54,29 @@ export type OrderItem = {
 }
 
 export type PaymentMethod = 'whatsapp' | 'razorpay' | 'cod'
+export type PaymentMethodSettings = Record<PaymentMethod, boolean>
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'cod_pending' | 'whatsapp_pending'
 export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+
+export type CheckoutSettings = {
+  paymentMethods?: Partial<PaymentMethodSettings>
+}
+
+export type VisualSettings = {
+  parallaxSpeed?: number
+}
+
+export type PolicyPageContent = {
+  title: string
+  body: string
+  lastUpdated?: string
+}
+
+export type PolicySettings = {
+  privacy?: Partial<PolicyPageContent>
+  return?: Partial<PolicyPageContent>
+  shipping?: Partial<PolicyPageContent>
+}
 
 export type DeliveryAddress = {
   name: string
@@ -106,6 +129,11 @@ export type SiteSettings = {
   announcement_text: string | null
   instagram_url: string | null
   facebook_url: string | null
+  contact_location?: string | null
+  contact_email?: string | null
+  contact_phone?: string | null
+  open_time?: string | null
+  policies?: PolicySettings | string | null
   hero_config: string | null
   page_configs: string | null
   updated_at: string

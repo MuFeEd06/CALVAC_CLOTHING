@@ -4,21 +4,23 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import HeroModelParallax from './HeroModelParallax'
-import type { SiteSettings } from '@/types'
+import type { Category, SiteSettings } from '@/types'
 import { buildPageHelper } from '@/lib/pageConfig'
 import { HERO_DEFAULTS } from '@/lib/pageDefaults'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { clampedParallax } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
+import { getParallaxSpeed } from '@/lib/siteSettings'
+import { getFeaturedDropHref } from '@/lib/featuredDropRedirect'
 
 interface HeroElement {
   id: string; visible: boolean; x: number; y: number
   fontSize?: number; color?: string; content?: string; type?: string
 }
 interface HeroConfig { elements: HeroElement[]; bgColor: string; accentColor: string }
-interface Props { settings: SiteSettings | null }
+interface Props { settings: SiteSettings | null; categories?: Category[] }
 
-export default function HeroSection({ settings }: Props) {
+export default function HeroSection({ settings, categories = [] }: Props) {
   const [scrollY, setScrollY] = useState(0)
   const viewport = useViewportKind()
 
@@ -30,6 +32,8 @@ export default function HeroSection({ settings }: Props) {
 
   const pageCfg = buildPageHelper(settings, 'hero')
   const txCfg = getScrollTransitionConfig(settings)
+  const parallaxSpeed = getParallaxSpeed(settings)
+  const featuredDropHref = getFeaturedDropHref(settings, categories)
 
   // scrollY for hero = window.scrollY (section starts at top)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
@@ -79,7 +83,7 @@ export default function HeroSection({ settings }: Props) {
     const isTablet = viewport === 'tablet'
     const headline = `${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`
     const padX = isTablet ? 'clamp(32px,7vw,72px)' : '20px'
-    const tabletParallax = clampedParallax(scrollY, 0.07, 36)
+    const tabletParallax = clampedParallax(scrollY, 0.07 * parallaxSpeed, 36 * parallaxSpeed)
 
     // ── TABLET: unchanged original layout ──
     if (isTablet) {
@@ -108,15 +112,15 @@ export default function HeroSection({ settings }: Props) {
               )}
               {vis('new_drop') && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
-                  <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>Shop Now</Link>
+                  <Link href={featuredDropHref} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>Shop Now</Link>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa' }}><span style={{ width: 7, height: 7, borderRadius: 999, background: merged.accentColor }} />{el('new_drop')?.content ?? 'Collection 2026'}</span>
                 </div>
               )}
             </div>
             <div style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
               <div style={{ position: 'absolute', inset: '0 4% 0 0', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', transform: `translateY(${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                  {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', transform: `translateY(-${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
                 </div>
               </div>
               {vis('orange_star') && <div className="animate-spin-slow" style={{ ...exitStyle, position: 'absolute', left: '2%', top: '62%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 34, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
@@ -130,7 +134,7 @@ export default function HeroSection({ settings }: Props) {
 
     // Mobile: scroll outro on content, parallax-only image.
     // Hero is at top so scrollY drives all effects directly (no sectionProgress needed)
-    const mobileParallax = clampedParallax(scrollY, 0.06, 34)
+    const mobileParallax = clampedParallax(scrollY, 0.06 * parallaxSpeed, 34 * parallaxSpeed)
     // fadeIn for text zones based on how far scrollY is (they start visible, exit on scroll)
     const mobileExitStyle = scrollExitStyle(scrollY, txCfg)
     return (
@@ -158,11 +162,11 @@ export default function HeroSection({ settings }: Props) {
         </div>
 
         {/* Zone 2 — full-width hero image — parallax (image does NOT get exitStyle) */}
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de') }}>
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), marginTop: '-34px' }}>
           {/* Parallax inner wrapper */}
-          <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', transform: `translateY(-${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
             {heroImageUrl ? (
-              <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
+              <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
             ) : null}
           </div>
           {/* Stat — overlaid bottom-right like desktop */}
@@ -203,7 +207,7 @@ export default function HeroSection({ settings }: Props) {
           )}
           {vis('new_drop') && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-              <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 8, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '10px 22px', fontSize: 10, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
+              <Link href={featuredDropHref} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 44, gap: 8, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '10px 22px', fontSize: 10, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
                 Shop Now →
               </Link>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>
@@ -231,7 +235,7 @@ export default function HeroSection({ settings }: Props) {
         <div style={{ position: 'absolute', left: '66.66%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.05)', pointerEvents: 'none' }} />
 
         {/* Image — no exit style */}
-        <HeroModelParallax imageUrl={heroImageUrl} bgColor={merged.bgColor === '#f5f5f3' ? '#e2e2de' : merged.bgColor} x={imgX} y={imgY} width={imgW} height={imgH} zoom={imgZoom} objectPosition={imgObjPos} />
+        <HeroModelParallax imageUrl={heroImageUrl} bgColor={merged.bgColor === '#f5f5f3' ? '#e2e2de' : merged.bgColor} x={imgX} y={imgY} width={imgW} height={imgH} zoom={imgZoom} objectPosition={imgObjPos} parallaxSpeed={parallaxSpeed} />
 
         {/* ── All text elements wrapped with exitStyle ── */}
         <div style={{ ...exitStyle, position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
@@ -268,7 +272,7 @@ export default function HeroSection({ settings }: Props) {
           )}
 
           {vis('product_card') && (
-            <Link href="/shop" style={{ ...pos('product_card'), textDecoration: 'none', pointerEvents: 'auto', background: '#fff', border: '1px solid #e8e8e5', borderRadius: 14, padding: '14px 18px', width: 172, boxShadow: '0 8px 32px rgba(0,0,0,0.08)', fontFamily: 'Barlow, sans-serif', display: 'block', transition: 'box-shadow 0.2s, transform 0.2s' }}
+            <Link href={featuredDropHref} style={{ ...pos('product_card'), textDecoration: 'none', pointerEvents: 'auto', background: '#fff', border: '1px solid #e8e8e5', borderRadius: 14, padding: '14px 18px', width: 172, boxShadow: '0 8px 32px rgba(0,0,0,0.08)', fontFamily: 'Barlow, sans-serif', display: 'block', transition: 'box-shadow 0.2s, transform 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
@@ -288,7 +292,7 @@ export default function HeroSection({ settings }: Props) {
                 <span style={{ fontSize: 9, fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow, sans-serif' }}>New Drop</span>
               </div>
               <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', fontFamily: 'Barlow, sans-serif', marginBottom: 10 }}>{el('new_drop')?.content ?? 'Collection 2026'}</p>
-              <Link href="/shop" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 40, padding: '7px 20px', fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow, sans-serif' }}>Shop Now →</Link>
+              <Link href={featuredDropHref} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid #0d0d0d', borderRadius: 40, padding: '7px 20px', fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow, sans-serif' }}>Shop Now →</Link>
             </div>
           )}
 

@@ -1,4 +1,4 @@
-import type { CartItem } from '@/types'
+import type { CartItem, OrderItem } from '@/types'
 
 export function buildWhatsAppMessage(
   items: CartItem[],
@@ -30,6 +30,39 @@ export function buildWhatsAppMessage(
   lines.push(`*Subtotal: ₹${subtotal.toLocaleString('en-IN')}*`)
   lines.push(``)
   lines.push(`_(Delivery charges will be confirmed separately)_`)
+
+  return lines.join('\n')
+}
+
+export function buildWhatsAppOrderMessage(
+  items: OrderItem[],
+  customerName: string,
+  customerPhone: string,
+  address: string,
+  subtotal?: number
+): string {
+  const lines: string[] = []
+
+  lines.push('*New Order - CALVAC*')
+  lines.push('')
+  lines.push(`*Customer:* ${customerName}`)
+  lines.push(`*Phone:* ${customerPhone}`)
+  if (address) lines.push(`*Address:* ${address}`)
+  lines.push('')
+  lines.push('*Order Items:*')
+
+  const total = items.reduce((sum, item, i) => {
+    const lineTotal = item.price * item.quantity
+    lines.push(
+      `${i + 1}. ${item.product_name} - ${item.color}, Size ${item.size} x ${item.quantity} = Rs.${lineTotal.toLocaleString('en-IN')}`
+    )
+    return sum + lineTotal
+  }, 0)
+
+  lines.push('')
+  lines.push(`*Subtotal: Rs.${(subtotal ?? total).toLocaleString('en-IN')}*`)
+  lines.push('')
+  lines.push('_(Delivery charges will be confirmed separately)_')
 
   return lines.join('\n')
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, ArrowLeft } from 'lucide-react'
 import { useCart } from '@/hooks/useCart'
+import { getProductRatingSeed } from '@/lib/productRating'
 import type { Product, ProductColor } from '@/types'
 
 interface ProductDetailClientProps {
@@ -19,6 +20,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const router = useRouter()
 
   const currentPrice = selectedColor.price ?? product.price
+  const rating = getProductRatingSeed(product.id || product.slug)
+  const specifications = Object.entries(product.specifications ?? {}).filter(([, value]) => value)
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -42,6 +45,16 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       <h1 className="font-condensed font-900 text-4xl md:text-5xl leading-none mb-4">
         {product.name.toUpperCase()}
       </h1>
+
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-[var(--orange)] text-sm tracking-[1px]">★★★★★</span>
+        <span className="text-xs font-600 tracking-widest uppercase text-[var(--gray-dark)]">
+          {rating.rating.toFixed(1)}
+        </span>
+        <span className="text-xs text-[var(--gray-mid)]">
+          ({rating.reviewCount.toLocaleString('en-IN')} reviews)
+        </span>
+      </div>
 
       <div className="flex items-baseline gap-3 mb-6">
         <span className="font-condensed font-700 text-4xl">
@@ -142,6 +155,24 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           Buy Now
         </button>
       </div>
+
+      {specifications.length > 0 && (
+        <div className="mt-8 pt-8 border-t border-[var(--gray-light)]">
+          <h3 className="text-xs font-600 tracking-widest uppercase mb-4">Specifications</h3>
+          <div className="divide-y divide-[var(--gray-light)] border border-[var(--gray-light)]">
+            {specifications.map(([key, value]) => (
+              <div key={key} className="grid grid-cols-[42%_1fr]">
+                <div className="px-4 py-3 bg-[var(--gray-light)]/45 text-xs font-600 tracking-widest uppercase text-[var(--gray-dark)]">
+                  {key}
+                </div>
+                <div className="px-4 py-3 text-sm text-[var(--gray-dark)]">
+                  {value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {product.description && (
         <div className="mt-8 pt-8 border-t border-[var(--gray-light)]">
