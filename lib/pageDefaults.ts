@@ -19,6 +19,23 @@ export const HERO_DEFAULTS = [
   { id: 'scroll_ind',    label: 'Scroll Indicator',    visible: true, x: 96, y: 70,  fontSize: 8,  color: '#aaaaaa', content: '| SCROLL' },
 ]
 
+export const HERO_MOBILE_DEFAULTS = [
+  { id: 'model_image',   label: 'Hero Model Image',    visible: true, x: 20, y: 28, width: 72, height: 66, isImage: true,  color: '#e2e2de', imageUrl: '', fontSize: 14, zoom: 1, objectPosition: 'top center' },
+  { id: 'tag_left',      label: '//FASHION Tag',       visible: true, x: 5,  y: 7,  fontSize: 12, color: '#f04e0f', content: '//FASHION - SS 2026' },
+  { id: 'headline_left', label: 'Left Headline',       visible: true, x: 5,  y: 14, fontSize: 76, color: '#0d0d0d', content: 'where\n- style' },
+  { id: 'est_rule',      label: 'EST. 2026 Rule',      visible: true, x: 5,  y: 93, fontSize: 8,  color: '#aaaaaa', content: '-- EST. 2026' },
+  { id: 'description',   label: 'Description Text',    visible: true, x: 5,  y: 75, fontSize: 14, color: '#777777', content: 'Explore curated collections, exclusive drops and everyday essentials all thoughtfully designed in one stylish shopping destination.' },
+  { id: 'product_card',  label: 'Product Card',        visible: true, x: 58, y: 70, fontSize: 13, color: '#0d0d0d', content: 'Cargo Oversized Jacket', type: 'product_card' },
+  { id: 'new_drop',      label: 'New Drop + Shop Now', visible: true, x: 5,  y: 86, fontSize: 10, color: '#0d0d0d', content: 'Collection 2026' },
+  { id: 'tag_right',     label: 'Styled For Life',     visible: true, x: 72, y: 30, fontSize: 24, color: '#aaaaaa', content: 'Styled\nFor\nLife.\n--' },
+  { id: 'headline_right',label: 'Right Headline',      visible: true, x: 55, y: 36, fontSize: 54, color: '#0d0d0d', content: 'lives\n-\nnow' },
+  { id: 'avatars',       label: 'Avatar Cluster',      visible: true, x: 58, y: 66, fontSize: 10, color: '#0d0d0d', content: '', type: 'avatars' },
+  { id: 'orange_star',   label: 'Orange Star âœ¦',       visible: true, x: 7,  y: 61, fontSize: 34, color: '#f04e0f', content: '*' },
+  { id: 'stat',          label: '280K Stat',           visible: true, x: 62, y: 65, fontSize: 56, color: '#0d0d0d', content: '280K' },
+  { id: 'stat_label',    label: 'People We Inspire',   visible: true, x: 67, y: 78, fontSize: 8,  color: '#aaaaaa', content: 'PEOPLE WE INSPIRE' },
+  { id: 'scroll_ind',    label: 'Scroll Indicator',    visible: true, x: 92, y: 91, fontSize: 8,  color: '#aaaaaa', content: '| SCROLL' },
+]
+
 export const FEATURED_DEFAULTS = [
   { id: 'headline',     label: 'Headline',          visible: true, x: 2,  y: 4,  fontSize: 82,  color: '#0d0d0d', content: 'All - about\nmoments ©26' },
   { id: 'star',         label: 'Orange Star ✦',     visible: true, x: 3,  y: 50, fontSize: 32,  color: '#f04e0f', content: '✦' },
