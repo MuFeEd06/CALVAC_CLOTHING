@@ -8,9 +8,9 @@ A full-stack clothing e-commerce website built with **Next.js 14**, **Supabase**
 |---|---|
 | Frontend | Next.js 14 (App Router) + Tailwind CSS |
 | Database | Supabase (PostgreSQL) |
-| Auth | Supabase Auth (admin only) |
+| Auth | Supabase Auth |
 | Storage | Supabase Storage (product images) |
-| Checkout | WhatsApp-based |
+| Checkout | WhatsApp, Cash on Delivery, Razorpay-ready online payments |
 | Deploy | Vercel |
 
 ---
@@ -40,6 +40,15 @@ cp .env.local.example .env.local
 ```
 
 Fill in `.env.local` with your Supabase credentials and WhatsApp number.
+
+For online payments, add both Razorpay variables:
+
+- `NEXT_PUBLIC_RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+
+Keep `RAZORPAY_KEY_SECRET` server-side only. Razorpay order creation and signature verification run through app API routes. `SUPABASE_SERVICE_ROLE_KEY` is required on the server for verified payment status updates while customer order update permissions stay closed by RLS.
+
+For production auth emails, configure custom SMTP in the Supabase dashboard. The app uses Supabase email/password auth and confirmation-compatible redirects; SMTP itself is not implemented in the Next.js app.
 
 ### 4. Run Locally
 
@@ -84,6 +93,10 @@ URL: `yoursite.com/admin`
 | Homepage | `/` |
 | Shop | `/shop` |
 | Product Detail | `/product/[slug]` |
+| Contact | `/contact` |
+| Privacy Policy | `/privacy-policy` |
+| Return Policy | `/return-policy` |
+| Shipping Policy | `/shipping-policy` |
 | Admin Login | `/admin/login` |
 
 ---

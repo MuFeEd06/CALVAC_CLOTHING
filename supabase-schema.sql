@@ -38,9 +38,13 @@ create table if not exists public.products (
   carousel_slot integer,
   featured_moment_slot integer,
   collection_tag text,
+  specifications jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.products
+  add column if not exists specifications jsonb not null default '{}'::jsonb;
 
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
@@ -86,10 +90,22 @@ create table if not exists public.site_settings (
   announcement_text text,
   instagram_url text,
   facebook_url text,
+  contact_location text,
+  contact_email text,
+  contact_phone text,
+  open_time text,
+  policies jsonb not null default '{}'::jsonb,
   hero_config text,
   page_configs text,
   updated_at timestamptz not null default now()
 );
+
+alter table public.site_settings
+  add column if not exists contact_location text,
+  add column if not exists contact_email text,
+  add column if not exists contact_phone text,
+  add column if not exists open_time text,
+  add column if not exists policies jsonb not null default '{}'::jsonb;
 
 insert into public.site_settings (
   brand_name,
@@ -139,7 +155,11 @@ create policy "Admins can manage products"
 drop policy if exists "Anyone can create orders" on public.orders;
 create policy "Anyone can create orders"
   on public.orders for insert
-  with check (true);
+  with check (
+    (payment_method = 'razorpay' and payment_status = 'pending' and status = 'pending')
+    or (payment_method = 'whatsapp' and payment_status = 'whatsapp_pending' and status = 'pending')
+    or (payment_method = 'cod' and payment_status = 'cod_pending' and status in ('pending', 'confirmed'))
+  );
 
 drop policy if exists "Users can read own orders" on public.orders;
 create policy "Users can read own orders"
