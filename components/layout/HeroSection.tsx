@@ -6,7 +6,7 @@ import Image from 'next/image'
 import HeroModelParallax from './HeroModelParallax'
 import type { Category, SiteSettings } from '@/types'
 import { buildPageHelper } from '@/lib/pageConfig'
-import { HERO_DEFAULTS } from '@/lib/pageDefaults'
+import { HERO_DEFAULTS, HERO_MOBILE_DEFAULTS } from '@/lib/pageDefaults'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { clampedParallax } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
@@ -16,6 +16,8 @@ import { getFeaturedDropHref } from '@/lib/featuredDropRedirect'
 interface HeroElement {
   id: string; visible: boolean; x: number; y: number
   fontSize?: number; color?: string; content?: string; type?: string
+  imageUrl?: string; width?: number; height?: number
+  isImage?: boolean; zoom?: number; objectPosition?: string
 }
 interface HeroConfig { elements: HeroElement[]; bgColor: string; accentColor: string }
 interface Props { settings: SiteSettings | null; categories?: Category[] }
@@ -38,13 +40,14 @@ export default function HeroSection({ settings, categories = [] }: Props) {
   // scrollY for hero = window.scrollY (section starts at top)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
 
-  const merged: HeroConfig = { bgColor: '#f5f5f3', accentColor: '#f04e0f', elements: HERO_DEFAULTS as any[] }
+  const baseDefaults = viewport === 'mobile' ? HERO_MOBILE_DEFAULTS : HERO_DEFAULTS
+  const merged: HeroConfig = { bgColor: '#f5f5f3', accentColor: '#f04e0f', elements: baseDefaults as any[] }
   if (settings?.page_configs) {
     try {
       const pc = JSON.parse(settings.page_configs)
       const pg = (viewport === 'mobile' ? pc?._mobileConfigs?.hero : viewport === 'tablet' ? pc?._tabletConfigs?.hero : null) ?? pc?.hero
       if (pg?.elements) {
-        merged.elements = HERO_DEFAULTS.map((def: any) => {
+        merged.elements = baseDefaults.map((def: any) => {
           const saved = pg.elements.find((e: any) => e.id === def.id)
           return saved ? { ...def, ...saved } : def
         })
@@ -61,11 +64,19 @@ export default function HeroSection({ settings, categories = [] }: Props) {
     || settings?.hero_description
     || 'Explore curated collections, exclusive drops and everyday essentials all thoughtfully designed in one stylish shopping destination.'
 
-  const heroImageUrl = el('model_image')?.content?.startsWith('http')
-    ? el('model_image')!.content!
-    : pageCfg.imageUrl('model_image')
-
   const imgEl = el('model_image') as any
+  const legacyHeroImageUrl = (() => {
+    try {
+      const legacy = settings?.hero_config ? JSON.parse(settings.hero_config) : null
+      return legacy?.elements?.find((item: any) => item.id === 'model_image')?.imageUrl ?? ''
+    } catch {
+      return ''
+    }
+  })()
+  const heroImageUrl = imgEl?.imageUrl
+    || (typeof imgEl?.content === 'string' && imgEl.content.startsWith('http') ? imgEl.content : '')
+    || pageCfg.imageUrl('model_image')
+    || legacyHeroImageUrl
   const imgX      = imgEl?.x      ?? 33
   const imgY      = imgEl?.y      ?? 0
   const imgW      = imgEl?.width  ?? 34
@@ -137,7 +148,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
     const mobileParallax = clampedParallax(scrollY, 0.06 * parallaxSpeed, 34 * parallaxSpeed)
     // fadeIn for text zones based on how far scrollY is (they start visible, exit on scroll)
     const mobileExitStyle = scrollExitStyle(scrollY, txCfg)
-    return (
+    const legacyMobileHero = (
       <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd', minHeight: '100svh' }}>
         {/* Guide lines (decorative, like desktop) */}
         <div style={{ position: 'absolute', left: '33%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.04)', pointerEvents: 'none' }} />
@@ -224,6 +235,161 @@ export default function HeroSection({ settings, categories = [] }: Props) {
             </div>
           )}
         </div>
+      </section>
+    )
+    void legacyMobileHero
+
+    const mobileCanvasParallax = clampedParallax(scrollY, 0.035 * parallaxSpeed, 18 * parallaxSpeed)
+    const mobileFont = (id: string, fallback: number, minRatio = 0.72) => {
+      const value = el(id)?.fontSize ?? fallback
+      return `clamp(${Math.max(7, Math.round(value * minRatio))}px, ${(value / 390) * 100}vw, ${value}px)`
+    }
+    const mobilePos = (id: string, zIndex: number, extra?: React.CSSProperties): React.CSSProperties => {
+      const item = el(id)
+      if (!item || item.visible === false) return { display: 'none' }
+      return { position: 'absolute', left: `${item.x}%`, top: `${item.y}%`, zIndex, ...extra }
+    }
+    const mobileTextBase = (id: string, fallback: number, extra?: React.CSSProperties): React.CSSProperties => ({
+      fontFamily: id.includes('headline') || id === 'stat' || id === 'tag_right' ? '"Barlow Condensed",sans-serif' : 'Barlow,sans-serif',
+      fontSize: mobileFont(id, fallback),
+      color: el(id)?.color ?? '#0d0d0d',
+      whiteSpace: 'pre-line',
+      overflowWrap: 'break-word',
+      margin: 0,
+      ...extra,
+    })
+
+    return (
+      <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd', height: 'max(860px, 100svh)', minHeight: 860 }}>
+        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', left: '33%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.045)' }} />
+          <div style={{ position: 'absolute', left: '67%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.045)' }} />
+        </div>
+
+        {vis('tag_left') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('tag_left', 12, { maxWidth: '62%' }) }}>
+            <span style={mobileTextBase('tag_left', 12, { display: 'block', fontWeight: 800, letterSpacing: '4px', lineHeight: 1.25, textTransform: 'uppercase' })}>
+              {el('tag_left')?.content ?? '//FASHION - SS 2026'}
+            </span>
+          </div>
+        )}
+
+        {vis('headline_left') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('headline_left', 10, { maxWidth: '82%', pointerEvents: 'none' }) }}>
+            <h1 style={mobileTextBase('headline_left', 76, { fontWeight: 900, lineHeight: 0.86, letterSpacing: 0, textTransform: 'lowercase' })}>
+              {el('headline_left')?.content ?? 'where\n- style'}
+            </h1>
+          </div>
+        )}
+
+        {vis('tag_right') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('tag_right', 30, { maxWidth: '24%', textAlign: 'right', pointerEvents: 'none' }) }}>
+            <p style={mobileTextBase('tag_right', 24, { fontWeight: 800, lineHeight: 1.08, letterSpacing: '4px', textTransform: 'uppercase' })}>
+              {el('tag_right')?.content ?? 'Styled\nFor\nLife.\n--'}
+            </p>
+          </div>
+        )}
+
+        {vis('headline_right') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('headline_right', 10, { maxWidth: '42%', textAlign: 'left', pointerEvents: 'none' }) }}>
+            <h2 style={mobileTextBase('headline_right', 54, { fontWeight: 900, lineHeight: 0.88, letterSpacing: 0, textTransform: 'lowercase' })}>
+              {el('headline_right')?.content ?? 'lives\n-\nnow'}
+            </h2>
+          </div>
+        )}
+
+        {vis('model_image') && (
+          <div style={{ position: 'absolute', left: `${imgX}%`, top: `${imgY}%`, width: `${imgW}%`, height: `${imgH}%`, zIndex: 20, overflow: 'hidden', background: 'transparent', pointerEvents: 'none', willChange: 'transform' }}>
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '-7%', height: '118%', background: 'transparent', transform: `translateY(-${mobileCanvasParallax}px)`, transition: 'transform 0.1s linear' }}>
+              {heroImageUrl ? (
+                <Image
+                  src={heroImageUrl}
+                  alt="Hero model"
+                  fill
+                  priority
+                  sizes="80vw"
+                  style={{ objectFit: 'contain', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }}
+                />
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {vis('orange_star') && (
+          <div className="animate-spin-slow" style={{ ...mobileExitStyle, ...mobilePos('orange_star', 30, { color: el('orange_star')?.color ?? merged.accentColor, fontSize: mobileFont('orange_star', 34, 0.85), lineHeight: 1, pointerEvents: 'none' }) }}>
+            {el('orange_star')?.content ?? '*'}
+          </div>
+        )}
+
+        {vis('avatars') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('avatars', 34, { display: 'flex', alignItems: 'center', pointerEvents: 'none' }) }}>
+            {['J','A'].map((l, i) => (
+              <div key={i} style={{ width: 22, height: 22, borderRadius: '50%', background: '#c8c8c6', border: `2px solid ${merged.bgColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#555', marginLeft: i === 0 ? 0 : -6, fontFamily: 'Barlow,sans-serif' }}>{l}</div>
+            ))}
+            <div style={{ width: 22, height: 22, borderRadius: '50%', background: merged.accentColor, border: `2px solid ${merged.bgColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', marginLeft: -6 }}>+</div>
+          </div>
+        )}
+
+        {vis('stat') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('stat', 32, { textAlign: 'right', pointerEvents: 'none' }) }}>
+            <p style={mobileTextBase('stat', 56, { fontWeight: 900, lineHeight: 0.86 })}>
+              {el('stat')?.content ?? '280K'}
+            </p>
+          </div>
+        )}
+
+        {vis('stat_label') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('stat_label', 32, { maxWidth: '28%', textAlign: 'right', pointerEvents: 'none' }) }}>
+            <p style={mobileTextBase('stat_label', 8, { color: el('stat_label')?.color ?? '#aaa', fontSize: mobileFont('stat_label', 8, 0.9), lineHeight: 1.35, letterSpacing: '2.5px', textTransform: 'uppercase' })}>
+              {el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}
+            </p>
+          </div>
+        )}
+
+        {vis('description') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('description', 30, { maxWidth: '84%' }) }}>
+            <p style={mobileTextBase('description', 14, { color: el('description')?.color ?? '#666', lineHeight: 1.65, fontWeight: 400 })}>
+              {description}
+            </p>
+          </div>
+        )}
+
+        {vis('product_card') && (
+          <Link href={featuredDropHref} style={{ ...mobileExitStyle, ...mobilePos('product_card', 36, { textDecoration: 'none', pointerEvents: 'auto', background: '#fff', border: '1px solid #e8e8e5', borderRadius: 12, padding: '10px 12px', width: 'min(172px, 39vw)', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', fontFamily: 'Barlow,sans-serif', display: 'block' }) }}>
+            <p style={{ fontSize: 7, letterSpacing: '2px', textTransform: 'uppercase', color: '#aaa', margin: '0 0 6px' }}>Featured Drop</p>
+            <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 800, fontSize: mobileFont('product_card', 13, 0.9), lineHeight: 1.15, margin: '0 0 8px', color: el('product_card')?.color ?? '#0d0d0d' }}>{el('product_card')?.content ?? 'Cargo Oversized Jacket'}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+              <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 20, color: '#0d0d0d' }}>₹3,499</span>
+              <span style={{ fontSize: 8, background: merged.accentColor, color: '#fff', padding: '2px 6px', borderRadius: 20, fontWeight: 700 }}>-20%</span>
+            </div>
+          </Link>
+        )}
+
+        {vis('new_drop') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('new_drop', 35, { pointerEvents: 'auto', maxWidth: '78%' }) }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: merged.accentColor, flexShrink: 0 }} />
+              <span style={{ fontSize: mobileFont('new_drop', 10, 0.9), fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase', color: '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('new_drop')?.content ?? 'Collection 2026'}</span>
+            </div>
+            <Link href={featuredDropHref} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: 42, gap: 8, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '9px 22px', fontSize: 10, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
+              Shop Now -&gt;
+            </Link>
+          </div>
+        )}
+
+        {vis('est_rule') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('est_rule', 30, { display: 'flex', alignItems: 'center', gap: 10, opacity: 0.45, pointerEvents: 'none' }) }}>
+            <div style={{ width: 32, height: 1, background: '#0d0d0d' }} />
+            <span style={{ fontSize: mobileFont('est_rule', 8, 0.9), letterSpacing: '3px', textTransform: 'uppercase', color: el('est_rule')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>{el('est_rule')?.content ?? 'EST. 2026'}</span>
+          </div>
+        )}
+
+        {vis('scroll_ind') && (
+          <div style={{ ...mobileExitStyle, ...mobilePos('scroll_ind', 30, { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: 0.3, pointerEvents: 'none' }) }}>
+            <div style={{ width: 1, height: 34, background: 'linear-gradient(to bottom, transparent, #0d0d0d)' }} />
+            <span style={{ fontSize: mobileFont('scroll_ind', 8, 0.9), letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 600, writingMode: 'vertical-rl', fontFamily: 'Barlow,sans-serif' }}>Scroll</span>
+          </div>
+        )}
       </section>
     )
   }
