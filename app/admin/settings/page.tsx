@@ -275,14 +275,15 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
     return () => ro.disconnect()
   }, [])
 
-  const onMouseDown = (e: React.MouseEvent, id: string) => {
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>, id: string) => {
     e.preventDefault(); e.stopPropagation()
     onSelect(id)
     dragging.current = id
+    e.currentTarget.setPointerCapture(e.pointerId)
     const el = config.elements.find(x => x.id === id)!
     dragStart.current = { mouseX: e.clientX, mouseY: e.clientY, elX: el.x, elY: el.y }
   }
-  const onMouseMove = (e: React.MouseEvent) => {
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging.current || !canvasRef.current) return
     const rect = canvasRef.current.getBoundingClientRect()
     const dx = ((e.clientX - dragStart.current.mouseX) / rect.width) * 100
@@ -291,12 +292,12 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
       Math.round(Math.max(0, Math.min(90, dragStart.current.elX + dx)) * 10) / 10,
       Math.round(Math.max(0, Math.min(90, dragStart.current.elY + dy)) * 10) / 10)
   }
-  const onMouseUp = () => { dragging.current = null }
+  const onPointerUp = () => { dragging.current = null }
   const isFooter = config.id === 'footer'
 
   return (
-    <div ref={canvasRef} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-      style={{ position: 'relative', width: '100%', height: CANVAS_H, background: config.bgColor, borderRadius: 8, overflow: 'hidden', cursor: 'default', userSelect: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}>
+    <div ref={canvasRef} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onPointerLeave={onPointerUp}
+      style={{ position: 'relative', width: '100%', height: CANVAS_H, background: config.bgColor, borderRadius: 8, overflow: 'hidden', cursor: 'default', userSelect: 'none', touchAction: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}>
       <PageBackground config={config} />
       {!['featured_moments', 'hero', 'categories', 'collections', 'carousel'].includes(config.id) && [25, 50, 75].map(p => (
         <div key={p} style={{ position: 'absolute', left: `${p}%`, top: 0, bottom: 0, width: 1, background: isFooter ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', pointerEvents: 'none' }} />
@@ -305,8 +306,8 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
       {config.elements.filter(e => e.visible).map(e => {
         const isSelected = selectedId === e.id
         return (
-          <div key={e.id} onMouseDown={ev => onMouseDown(ev, e.id)} title={e.label}
-            style={{ position: 'absolute', left: `${e.x}%`, top: `${e.y}%`, cursor: 'grab', zIndex: isSelected ? 30 : 10, outline: isSelected ? `2px dashed ${config.accentColor}` : '2px dashed transparent', outlineOffset: 2, borderRadius: 3, transition: 'outline 0.15s' }}>
+          <div key={e.id} onPointerDown={ev => onPointerDown(ev, e.id)} title={e.label}
+            style={{ position: 'absolute', left: `${e.x}%`, top: `${e.y}%`, cursor: 'grab', touchAction: 'none', zIndex: isSelected ? 30 : 10, outline: isSelected ? `2px dashed ${config.accentColor}` : '2px dashed transparent', outlineOffset: 2, borderRadius: 3, transition: 'outline 0.15s' }}>
             {e.isImage ? (
               <div style={{ width: `${((e.width ?? 20) / 100) * canvasW}px`, height: `${(e.height ?? 30) * (CANVAS_H / 100)}px`, background: e.imageUrl ? `url(${e.imageUrl}) center/cover no-repeat` : (e.color ?? '#ddd'), borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minWidth: 40, minHeight: 40 }}>
                 {!e.imageUrl && <div style={{ textAlign: 'center', padding: 4 }}><ImageIcon size={14} color="rgba(255,255,255,0.4)" /><p style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)', margin: '3px 0 0', fontFamily: 'Barlow,sans-serif', letterSpacing: '1px', textTransform: 'uppercase' }}>{e.label}</p></div>}
@@ -1962,7 +1963,8 @@ export default function AdminSettingsPage() {
         )}
 
         {tab === 'mobile' && (
-          <MobilePageEditor
+          <DeviceCanvasEditor
+            device="mobile"
             pages={desktopPages}
             configs={mobileConfigs}
             activePage={activeMobileCanvasPage}

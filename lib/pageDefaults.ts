@@ -106,9 +106,9 @@ export interface MobileSectionConfig {
 }
 
 // ─── Mobile section defaults ──────────────────────────────────
-// These match what the live mobile homepage renders.
-// The admin Mobile Editor saves overrides into page_configs._mobileSections.
-// Live components read merged data via useMergedMobileConfig().
+// Legacy stacked mobile-section defaults kept for backward compatibility.
+// The active mobile landing editor and live homepage use page_configs._mobileConfigs
+// through mergeDeviceConfig().
 export const MOBILE_SECTION_DEFAULTS: Record<string, MobileSectionConfig> = {
   mobile_hero: {
     id: 'mobile_hero', label: 'Hero', icon: '①', bgColor: '#f5f5f3', accentColor: '#f04e0f',

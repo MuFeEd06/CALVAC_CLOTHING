@@ -18,7 +18,7 @@ interface Props {
 
 export default function HeroModelParallax({
   imageUrl,
-  bgColor = '#e2e2de',
+  bgColor = '#fff',
   x = 33,
   y = 0,
   width = 34,
@@ -45,14 +45,16 @@ export default function HeroModelParallax({
       top: `${y}%`,
       width: `${width}%`,
       height: `${height}%`,
-      zIndex: 1,
+      zIndex: 20,
       overflow: 'hidden',
-      background: imageUrl ? 'transparent' : bgColor,
+      background: 'transparent',
+      pointerEvents: 'none',
     }}>
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '115%',
+        background: 'transparent',
         transform: `translateY(${parallaxY}px)`,
         transition: 'transform 0.1s linear',
         willChange: 'transform',

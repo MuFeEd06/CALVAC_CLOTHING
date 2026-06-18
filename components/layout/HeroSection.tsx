@@ -90,7 +90,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
       return (
         <section style={{ position: 'relative', background: merged.bgColor, overflow: 'hidden', borderBottom: '1px solid #e0e0dd' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,0.86fr) minmax(280px,1.14fr)', gap: 'clamp(28px,5vw,64px)', alignItems: 'center', minHeight: 'clamp(520px,74vh,760px)', padding: `clamp(72px,10vh,118px) ${padX} clamp(56px,8vh,92px)` }}>
-            <div style={{ ...exitStyle, position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ ...exitStyle, position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', gap: 24 }}>
               {vis('tag_left') && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '4px', textTransform: 'uppercase', color: el('tag_left')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif' }}>
@@ -117,9 +117,9 @@ export default function HeroSection({ settings, categories = [] }: Props) {
                 </div>
               )}
             </div>
-            <div style={{ position: 'relative', minHeight: 560, overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: '0 4% 0 0', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', transform: `translateY(-${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+            <div style={{ position: 'relative', zIndex: 20, minHeight: 560, overflow: 'hidden', background: 'transparent', pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', inset: '0 4% 0 0', background: 'transparent', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', background: 'transparent', transform: `translateY(-${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
                 </div>
               </div>
@@ -162,9 +162,9 @@ export default function HeroSection({ settings, categories = [] }: Props) {
         </div>
 
         {/* Zone 2 — full-width hero image — parallax (image does NOT get exitStyle) */}
-        <div style={{ position: 'relative', zIndex: 1, width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageUrl ? 'transparent' : (imgEl?.color ?? '#e2e2de'), marginTop: '-34px' }}>
+        <div style={{ position: 'relative', zIndex: 20, width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: 'transparent', marginTop: '-34px', pointerEvents: 'none' }}>
           {/* Parallax inner wrapper */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', transform: `translateY(-${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', background: 'transparent', transform: `translateY(-${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
             {heroImageUrl ? (
               <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
             ) : null}
@@ -235,7 +235,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
         <div style={{ position: 'absolute', left: '66.66%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.05)', pointerEvents: 'none' }} />
 
         {/* Image — no exit style */}
-        <HeroModelParallax imageUrl={heroImageUrl} bgColor={merged.bgColor === '#f5f5f3' ? '#e2e2de' : merged.bgColor} x={imgX} y={imgY} width={imgW} height={imgH} zoom={imgZoom} objectPosition={imgObjPos} parallaxSpeed={parallaxSpeed} />
+        <HeroModelParallax imageUrl={heroImageUrl} bgColor={imgEl?.color ?? '#fff'} x={imgX} y={imgY} width={imgW} height={imgH} zoom={imgZoom} objectPosition={imgObjPos} parallaxSpeed={parallaxSpeed} />
 
         {/* ── All text elements wrapped with exitStyle ── */}
         <div style={{ ...exitStyle, position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>

@@ -1,11 +1,11 @@
 /**
  * useMergedMobileConfig
  * ─────────────────────
- * Reads _mobileSections from site_settings.page_configs, merges element
- * overrides on top of MOBILE_SECTION_DEFAULTS, and returns a ready-to-use
- * MobileSectionConfig for a given section id.
+ * Legacy helper for _mobileSections in site_settings.page_configs.
+ * The active responsive landing pages now read _mobileConfigs through
+ * mergeDeviceConfig() in useMergedConfig.ts.
  *
- * Usage in live mobile-aware page sections:
+ * Usage in legacy stacked mobile-section renderers:
  *
  *   import { useMergedMobileSection, mobileEl, mobileTxt, mobileImg, mobileVis, mobileClr, mobileFsize } from '@/lib/useMergedMobileConfig'
  *
