@@ -7,7 +7,7 @@ import {
   Image as ImageIcon, Monitor, Smartphone, Tablet, Settings, Bell, ChevronLeft,
 } from 'lucide-react'
 import {
-  HERO_DEFAULTS, FEATURED_DEFAULTS, CATEGORIES_DEFAULTS,
+  HERO_DEFAULTS, HERO_MOBILE_DEFAULTS, FEATURED_DEFAULTS, CATEGORIES_DEFAULTS,
   CAROUSEL_DEFAULTS, COLLECTIONS_DEFAULTS, FOOTER_DEFAULTS,
 } from '@/lib/pageDefaults'
 import { clampParallaxSpeed, DEFAULT_PAYMENT_METHODS, getParallaxSpeed, getPaymentMethodSettings, getPolicySettings } from '@/lib/siteSettings'
@@ -256,16 +256,19 @@ function PageBackground({ config }: { config: PageConfig }) {
   return null
 }
 
-function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight }: {
+function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight, device = 'desktop' }: {
   config: PageConfig; selectedId: string | null
-  onSelect: (id: string) => void; onDrag: (id: string, x: number, y: number) => void
+  onSelect: (id: string | null) => void; onDrag: (id: string, x: number, y: number) => void
   canvasHeight?: number
+  device?: 'desktop' | 'tablet' | 'mobile'
 }) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const dragging  = useRef<string | null>(null)
   const dragStart = useRef({ mouseX: 0, mouseY: 0, elX: 0, elY: 0 })
   const [canvasW, setCanvasW] = useState(640)
   const CANVAS_H = canvasHeight ?? 760
+  const designW = device === 'mobile' ? 390 : device === 'tablet' ? 768 : 1366
+  const textScale = canvasW / designW
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -285,18 +288,28 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
   }
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging.current || !canvasRef.current) return
+    const currentEl = config.elements.find(x => x.id === dragging.current)
     const rect = canvasRef.current.getBoundingClientRect()
     const dx = ((e.clientX - dragStart.current.mouseX) / rect.width) * 100
     const dy = ((e.clientY - dragStart.current.mouseY) / rect.height) * 100
+    const maxX = currentEl?.isImage ? Math.max(0, 100 - Math.min(currentEl.width ?? 20, 90)) : 96
+    const maxY = currentEl?.isImage ? Math.max(0, 100 - Math.min(currentEl.height ?? 30, 90)) : 96
     onDrag(dragging.current,
-      Math.round(Math.max(0, Math.min(90, dragStart.current.elX + dx)) * 10) / 10,
-      Math.round(Math.max(0, Math.min(90, dragStart.current.elY + dy)) * 10) / 10)
+      Math.round(Math.max(0, Math.min(maxX, dragStart.current.elX + dx)) * 10) / 10,
+      Math.round(Math.max(0, Math.min(maxY, dragStart.current.elY + dy)) * 10) / 10)
   }
   const onPointerUp = () => { dragging.current = null }
   const isFooter = config.id === 'footer'
+  const canvasLayer = (el: PageElement) => {
+    if (config.id !== 'hero') return 10
+    if (el.id === 'model_image') return 20
+    if (['product_card', 'new_drop', 'avatars', 'orange_star', 'tag_right', 'stat', 'stat_label', 'scroll_ind'].includes(el.id)) return 35
+    return 10
+  }
 
   return (
     <div ref={canvasRef} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onPointerLeave={onPointerUp}
+      onPointerDown={e => { if (e.target === e.currentTarget) onSelect(null) }}
       style={{ position: 'relative', width: '100%', height: CANVAS_H, background: config.bgColor, borderRadius: 8, overflow: 'hidden', cursor: 'default', userSelect: 'none', touchAction: 'none', boxShadow: '0 8px 40px rgba(0,0,0,0.15)' }}>
       <PageBackground config={config} />
       {!['featured_moments', 'hero', 'categories', 'collections', 'carousel'].includes(config.id) && [25, 50, 75].map(p => (
@@ -307,9 +320,10 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
         const isSelected = selectedId === e.id
         return (
           <div key={e.id} onPointerDown={ev => onPointerDown(ev, e.id)} title={e.label}
-            style={{ position: 'absolute', left: `${e.x}%`, top: `${e.y}%`, cursor: 'grab', touchAction: 'none', zIndex: isSelected ? 30 : 10, outline: isSelected ? `2px dashed ${config.accentColor}` : '2px dashed transparent', outlineOffset: 2, borderRadius: 3, transition: 'outline 0.15s' }}>
+            style={{ position: 'absolute', left: `${e.x}%`, top: `${e.y}%`, cursor: 'grab', touchAction: 'none', zIndex: isSelected ? 60 : canvasLayer(e), outline: isSelected ? `2px dashed ${config.accentColor}` : '2px dashed transparent', outlineOffset: 2, borderRadius: 3, transition: 'outline 0.15s' }}>
             {e.isImage ? (
-              <div style={{ width: `${((e.width ?? 20) / 100) * canvasW}px`, height: `${(e.height ?? 30) * (CANVAS_H / 100)}px`, background: e.imageUrl ? `url(${e.imageUrl}) center/cover no-repeat` : (e.color ?? '#ddd'), borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minWidth: 40, minHeight: 40 }}>
+              <div style={{ width: `${((e.width ?? 20) / 100) * canvasW}px`, height: `${(e.height ?? 30) * (CANVAS_H / 100)}px`, background: e.imageUrl ? 'transparent' : (e.color ?? '#ddd'), borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minWidth: 40, minHeight: 40 }}>
+                {e.imageUrl && <img src={e.imageUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: config.id === 'hero' && device === 'mobile' && e.id === 'model_image' ? 'contain' : 'cover', objectPosition: e.objectPosition ?? 'top center', transform: e.zoom && e.zoom !== 1 ? `scale(${e.zoom})` : undefined, transformOrigin: 'center top', pointerEvents: 'none' }} />}
                 {!e.imageUrl && <div style={{ textAlign: 'center', padding: 4 }}><ImageIcon size={14} color="rgba(255,255,255,0.4)" /><p style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)', margin: '3px 0 0', fontFamily: 'Barlow,sans-serif', letterSpacing: '1px', textTransform: 'uppercase' }}>{e.label}</p></div>}
               </div>
             ) : e.type === 'product_card' ? (
@@ -327,7 +341,7 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight 
                 <div style={{ width: 22, height: 22, borderRadius: '50%', background: config.accentColor, border: `2px solid ${config.bgColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', marginLeft: -6 }}>+</div>
               </div>
             ) : (
-              <div style={{ fontFamily: (e.id.includes('headline') || e.id.includes('stat') || e.id.includes('price') || e.id.includes('feat_title') || e.id.includes('cat') || e.id.includes('col')) ? '"Barlow Condensed",sans-serif' : 'Barlow,sans-serif', fontWeight: e.id.includes('headline') || e.id.includes('stat') || e.id.includes('price') || e.id.includes('cat') ? 900 : 500, fontSize: Math.max(7, Math.round((e.fontSize ?? 12) * (canvasW / 1366))), color: e.color ?? '#0d0d0d', whiteSpace: 'pre-line', lineHeight: 1.1, maxWidth: `${Math.max(60, 32 - e.x / 3)}%`, overflow: 'hidden' }}>{e.content || e.label}</div>
+              <div style={{ fontFamily: (e.id.includes('headline') || e.id.includes('stat') || e.id.includes('price') || e.id.includes('feat_title') || e.id.includes('cat') || e.id.includes('col')) ? '"Barlow Condensed",sans-serif' : 'Barlow,sans-serif', fontWeight: e.id.includes('headline') || e.id.includes('stat') || e.id.includes('price') || e.id.includes('cat') ? 900 : 500, fontSize: Math.max(7, Math.round((e.fontSize ?? 12) * textScale)), color: e.color ?? '#0d0d0d', whiteSpace: 'pre-line', lineHeight: 1.1, maxWidth: `${Math.max(60, 32 - e.x / 3)}%`, overflow: 'hidden' }}>{e.content || e.label}</div>
             )}
             {isSelected && <div style={{ position: 'absolute', top: -18, left: 0, background: config.accentColor, color: '#fff', fontSize: 9, padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', fontFamily: 'Barlow,sans-serif', pointerEvents: 'none', zIndex: 40 }}>{e.label}</div>}
           </div>
@@ -391,20 +405,21 @@ function buildDeviceDefaults(device: 'tablet' | 'mobile'): Record<PageId, PageCo
   const xClamp = device === 'tablet' ? 88 : 84
   const yClamp = 88
 
-  const clonePage = (page: PageConfig): PageConfig => ({
+  const clonePage = (page: PageConfig, preserveScale = false): PageConfig => ({
     ...page,
     elements: page.elements.map(el => ({
       ...el,
       x: Math.min(xClamp, Math.max(0, Math.round(el.x * 10) / 10)),
       y: Math.min(yClamp, Math.max(0, Math.round(el.y * 10) / 10)),
-      fontSize: el.fontSize ? Math.max(7, Math.round(el.fontSize * fontScale)) : el.fontSize,
-      width: el.width ? Math.min(device === 'tablet' ? 68 : 92, Math.max(8, Math.round(el.width * imageScale))) : el.width,
+      fontSize: el.fontSize ? (preserveScale ? el.fontSize : Math.max(7, Math.round(el.fontSize * fontScale))) : el.fontSize,
+      width: el.width ? (preserveScale ? el.width : Math.min(device === 'tablet' ? 68 : 92, Math.max(8, Math.round(el.width * imageScale)))) : el.width,
       height: el.height ? Math.min(100, Math.max(6, Math.round(el.height))) : el.height,
     })),
   })
+  const mobileHero: PageConfig = { ...DESKTOP_DEFAULTS.hero, elements: HERO_MOBILE_DEFAULTS as any }
 
   return {
-    hero: clonePage(DESKTOP_DEFAULTS.hero),
+    hero: device === 'mobile' ? clonePage(mobileHero, true) : clonePage(DESKTOP_DEFAULTS.hero),
     featured_moments: clonePage(DESKTOP_DEFAULTS.featured_moments),
     categories: clonePage(DESKTOP_DEFAULTS.categories),
     carousel: clonePage(DESKTOP_DEFAULTS.carousel),
@@ -592,7 +607,7 @@ function DeviceCanvasEditor({
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
           {cfg.elements.map(e => (
-            <button key={e.id} onClick={() => onUpdateEl(e.id, { visible: !e.visible })} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', background: e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible ? '#fff' : '#888', fontSize: 10, fontFamily: 'Barlow,sans-serif', transition: 'all 0.15s' }}>
+            <button key={e.id} onClick={() => onSelectedEl(e.id)} title="Select element. Use the eye button in the right panel to hide or show it." style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', background: selectedEl === e.id ? cfg.accentColor : e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible || selectedEl === e.id ? '#fff' : '#888', fontSize: 10, fontFamily: 'Barlow,sans-serif', transition: 'all 0.15s' }}>
               {e.visible ? <Eye size={9} /> : <EyeOff size={9} />}{e.label}
             </button>
           ))}
@@ -604,6 +619,7 @@ function DeviceCanvasEditor({
             onSelect={onSelectedEl}
             onDrag={(id, x, y) => onUpdateEl(id, { x, y })}
             canvasHeight={canvasHeight}
+            device={device}
           />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14, background: '#fff', borderRadius: 12, padding: 14 }}>
@@ -1740,20 +1756,21 @@ export default function AdminSettingsPage() {
               </div>
 
               {/* Visibility chips */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
-                {cfg.elements.map(e => (
-                  <button key={e.id} onClick={() => updateEl(e.id, { visible: !e.visible })} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', background: e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible ? '#fff' : '#888', fontSize: 10, fontFamily: 'Barlow,sans-serif', transition: 'all 0.15s' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 14 }}>
+                  {cfg.elements.map(e => (
+                  <button key={e.id} onClick={() => setSelectedEl(e.id)} title="Select element. Use the eye button in the right panel to hide or show it." style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, border: 'none', cursor: 'pointer', background: selectedEl === e.id ? cfg.accentColor : e.visible ? '#0d0d0d' : '#e0e0de', color: e.visible || selectedEl === e.id ? '#fff' : '#888', fontSize: 10, fontFamily: 'Barlow,sans-serif', transition: 'all 0.15s' }}>
                     {e.visible ? <Eye size={9} /> : <EyeOff size={9} />}{e.label}
                   </button>
                 ))}
               </div>
 
-              <DesktopPageCanvas
-                config={activePage === 'categories' ? { ...cfg, _items: categoryItems } as any : cfg}
-                selectedId={selectedEl}
-                onSelect={setSelectedEl}
-                onDrag={(id, x, y) => updateEl(id, { x, y })}
-              />
+                  <DesktopPageCanvas
+                    config={activePage === 'categories' ? { ...cfg, _items: categoryItems } as any : cfg}
+                    selectedId={selectedEl}
+                    onSelect={setSelectedEl}
+                    onDrag={(id, x, y) => updateEl(id, { x, y })}
+                    device="desktop"
+                  />
 
               {/* Page colors */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14, background: '#fff', borderRadius: 12, padding: 14 }}>
