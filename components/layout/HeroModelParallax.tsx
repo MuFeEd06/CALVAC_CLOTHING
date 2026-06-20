@@ -28,6 +28,8 @@ export default function HeroModelParallax({
   parallaxSpeed = 1,
 }: Props) {
   const [scrollY, setScrollY] = useState(0)
+  const hasImage = Boolean(imageUrl)
+  const imageBackground = hasImage ? 'transparent' : bgColor
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
@@ -47,14 +49,14 @@ export default function HeroModelParallax({
       height: `${height}%`,
       zIndex: 20,
       overflow: 'hidden',
-      background: 'transparent',
+      background: imageBackground,
       pointerEvents: 'none',
     }}>
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '115%',
-        background: 'transparent',
+        background: imageBackground,
         transform: `translateY(${parallaxY}px)`,
         transition: 'transform 0.1s linear',
         willChange: 'transform',

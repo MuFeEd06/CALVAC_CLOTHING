@@ -25,8 +25,7 @@ export default function AdminLoginPage() {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error || !data.session) {
-      const message = error?.message ?? 'Invalid credentials. Try again.'
-      setError(message.toLowerCase().includes('email not confirmed') ? 'Please confirm this admin email before signing in.' : message)
+      setError('Unable to sign in. Check your admin email, password, and email confirmation status.')
       setLoading(false)
       return
     }

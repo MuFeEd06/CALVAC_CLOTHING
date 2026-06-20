@@ -5,17 +5,26 @@ import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
 import { verifyRazorpaySignature } from '@/lib/razorpay'
+import { getStringField, isRecord, readJsonBody, sameOriginGuard } from '@/lib/security'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function POST(req: Request) {
-  try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      order_id,
-    } = await req.json()
+  const originError = sameOriginGuard(req)
+  if (originError) return originError
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !order_id) {
+  try {
+    const body = await readJsonBody(req)
+    if (!isRecord(body)) {
+      return NextResponse.json({ error: 'Invalid verification request' }, { status: 400 })
+    }
+
+    const razorpay_order_id = getStringField(body, 'razorpay_order_id', 96)
+    const razorpay_payment_id = getStringField(body, 'razorpay_payment_id', 96)
+    const razorpay_signature = getStringField(body, 'razorpay_signature', 256)
+    const order_id = getStringField(body, 'order_id', 64)
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !UUID_PATTERN.test(order_id)) {
       return NextResponse.json({ error: 'Missing verification fields' }, { status: 400 })
     }
 
@@ -50,26 +59,13 @@ export async function POST(req: Request) {
     )
 
     if (!valid) {
-      await supabase
-        .from('orders')
-        .update({
-          payment_status: 'failed',
-          status: 'pending',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', order.id)
-        .eq('payment_status', 'pending')
-
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
     const { error: updateError } = await supabase
       .from('orders')
       .update({
-        payment_status: 'paid',
-        payment_method: 'razorpay',
         razorpay_payment_id,
-        status: 'confirmed',
         updated_at: new Date().toISOString(),
       })
       .eq('id', order.id)
@@ -77,10 +73,14 @@ export async function POST(req: Request) {
 
     if (updateError) throw updateError
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({
+      success: true,
+      payment_status: 'pending',
+      message: 'Payment received. Final confirmation is completed by Razorpay webhook.',
+    })
   } catch (err: any) {
     return NextResponse.json(
-      { error: err?.message ?? 'Payment verification failed' },
+      { error: 'Payment verification failed' },
       { status: 500 },
     )
   }

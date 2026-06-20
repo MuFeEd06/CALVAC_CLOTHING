@@ -150,8 +150,11 @@ export default function CheckoutPage() {
       setUser(data.user)
       if (data.user?.user_metadata?.full_name) setAddr(a => ({ ...a, name: data.user!.user_metadata.full_name }))
     } catch (err: any) {
-      const message = err.message ?? 'Something went wrong'
-      setAuthError(message.toLowerCase().includes('email not confirmed') ? 'Please confirm your email before signing in.' : message)
+      setAuthError(
+        authMode === 'login'
+          ? 'Unable to sign in. Check your email, password, and email confirmation status.'
+          : 'Unable to create this account. Check your details and try again.',
+      )
     }
     finally { setAuthLoading(false) }
   }
@@ -251,7 +254,7 @@ export default function CheckoutPage() {
         }
 
         const options = {
-          key: razorpayKeyId,
+          key: rpOrder.keyId || razorpayKeyId,
           amount: rpOrder.amount,
           currency: 'INR',
           name: 'CALVAC',

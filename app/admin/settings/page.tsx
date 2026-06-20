@@ -919,7 +919,7 @@ function MobileHeroPreview({ cfg, accentColor, selectedId, onSelect }: { cfg: Pa
           </ElWrap>
         )}
       </div>
-      <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: imgEl?.color ?? '#e2e2de', flexShrink: 0 }}>
+      <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ position: 'relative', width: '100%', height: 160, overflow: 'hidden', background: imgSrc ? 'transparent' : (imgEl?.color ?? '#e2e2de'), flexShrink: 0 }}>
         {imgSrc ? <img src={imgSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imgEl?.objectPosition ?? 'top center', pointerEvents: 'none' }} /> : null}
         {v('stat') && <ElWrap id="stat" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', right: 10, bottom: 8 }}><p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontSize: 28, lineHeight: 0.85, fontWeight: 900, margin: 0, color: el('stat')?.color ?? '#0d0d0d' }}>{el('stat')?.content ?? '280K'}</p>{v('stat_label') && <p style={{ margin: '3px 0 0', fontSize: 6, letterSpacing: '2px', textTransform: 'uppercase', color: el('stat_label')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', textAlign: 'right' }}>{el('stat_label')?.content ?? 'PEOPLE WE INSPIRE'}</p>}</ElWrap>}
         {v('orange_star') && <ElWrap id="orange_star" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', left: 10, bottom: '18%', color: el('orange_star')?.color ?? accentColor, fontSize: 18, lineHeight: 1 }}>✦</ElWrap>}

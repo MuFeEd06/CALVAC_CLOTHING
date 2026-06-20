@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
-import { mergeDeviceConfig, vis, txt, imgUrl, clr } from '@/lib/useMergedConfig'
+import { mergeDeviceConfig, txt, imgUrl, clr } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { useViewportKind } from '@/lib/useBreakpoint'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
@@ -215,18 +215,17 @@ export default function CollectionCarousel({ products, settings }: Props) {
                     : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 8 }}>{item?.name}</span></div>}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                   {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
-                  {isActive && vis(cfg,'wear') && (
-                    <div style={{ position: 'absolute', bottom: 28, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
-                      <span style={{ fontSize: 9, color: clr(cfg,'wear','rgba(255,255,255,0.9)'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'wear','[Wear the Moment]')}</span>
-                    </div>
-                  )}
-                  {isActive && item?.slug && (
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 12px 10px', pointerEvents: 'none' }}>
-                      {item?.name && <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 13, color: '#fff', margin: '0 0 3px', letterSpacing: '0.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{item.name}</p>}
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 10px' }}>
-                        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif' }}>View</span>
-                        <span style={{ fontSize: 9, color: '#fff' }}>→</span>
-                      </div>
+                  {isActive && (item?.name || item?.slug) && (
+                    <div style={{ position: 'absolute', left: 44, right: 14, bottom: 22, zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 5, pointerEvents: 'none', textShadow: '0 1px 10px rgba(0,0,0,0.35)' }}>
+                      {item?.name && (
+                        <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 13, lineHeight: 1.05, color: clr(cfg,'wear','rgba(255,255,255,0.95)'), letterSpacing: '0.5px', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'normal' }}>{item.name}</span>
+                      )}
+                      {item?.slug && (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '3px 10px', maxWidth: '100%' }}>
+                          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '1.4px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>See Product</span>
+                          <span style={{ fontSize: 9, color: '#fff' }}>-&gt;</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -293,23 +292,19 @@ export default function CollectionCarousel({ products, settings }: Props) {
                   : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 10 }}>{item?.name}</span></div>}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                 {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
-                {isActive && vis(cfg,'wear') && (
-                  <div style={{ position: 'absolute', bottom: 36, left: 25, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
-                    <span style={{ fontSize: 11, color: clr(cfg,'wear','rgba(255,255,255,0.9)'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'wear','[Wear the Moment]')}</span>
-                  </div>
-                )}
-                {/* Product name + view prompt on active card */}
-                {isActive && item?.slug && (
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '10px 16px 14px', pointerEvents: 'none' }}>
+                {isActive && (item?.name || item?.slug) && (
+                  <div style={{ position: 'absolute', left: isDesktop ? 58 : 52, right: isDesktop ? 20 : 18, bottom: isDesktop ? 28 : 24, zIndex: 4, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: isDesktop ? 7 : 6, pointerEvents: 'none', textShadow: '0 1px 12px rgba(0,0,0,0.35)' }}>
                     {item?.name && (
-                      <p style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: 15, color: '#fff', margin: '0 0 4px', letterSpacing: '0.5px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: isDesktop ? 15 : 14, lineHeight: 1.05, color: clr(cfg,'wear','rgba(255,255,255,0.95)'), letterSpacing: '0.5px', maxWidth: '100%', overflow: 'hidden', whiteSpace: 'normal' }}>
                         {item.name}
-                      </p>
+                      </span>
                     )}
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: '4px 12px' }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif' }}>View Product</span>
-                      <span style={{ fontSize: 10, color: '#fff' }}>→</span>
-                    </div>
+                    {item?.slug && (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(6px)', borderRadius: 20, padding: isDesktop ? '4px 12px' : '4px 11px', maxWidth: '100%' }}>
+                        <span style={{ fontSize: isDesktop ? 9 : 8, fontWeight: 700, letterSpacing: isDesktop ? '1.8px' : '1.4px', textTransform: 'uppercase', color: '#fff', fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>See Product</span>
+                        <span style={{ fontSize: isDesktop ? 10 : 9, color: '#fff' }}>-&gt;</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

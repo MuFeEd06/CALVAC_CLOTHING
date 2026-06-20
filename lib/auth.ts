@@ -39,17 +39,7 @@ export function isAdminUser(user: Pick<User, 'email' | 'app_metadata'> | null | 
   if (!user) return false
 
   const metadata = user.app_metadata as Record<string, unknown> | undefined
-  const roles = metadata?.roles
-  const role = typeof metadata?.role === 'string' ? metadata.role.toLowerCase() : metadata?.role
-  const isAdminFlag = metadata?.is_admin
-  const adminFlag = metadata?.admin
-  const hasAdminRole =
-    role === 'admin' ||
-    isAdminFlag === true ||
-    (typeof isAdminFlag === 'string' && isAdminFlag.toLowerCase() === 'true') ||
-    adminFlag === true ||
-    (typeof adminFlag === 'string' && adminFlag.toLowerCase() === 'true') ||
-    (Array.isArray(roles) && roles.some(role => typeof role === 'string' && role.toLowerCase() === 'admin'))
+  const hasAdminRole = metadata?.role === 'admin' || metadata?.is_admin === true
 
   if (hasAdminRole) return true
 

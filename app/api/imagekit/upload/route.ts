@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server'
 import { getUser, isAdminUser } from '@/lib/auth'
 import { MAX_PRODUCT_IMAGE_BYTES } from '@/lib/productImages'
+import { sameOriginGuard } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const IMAGEKIT_UPLOAD_URL = 'https://upload.imagekit.io/api/v1/files/upload'
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+])
 
 function sanitizeFileName(name: string) {
   const fallback = `product-${Date.now()}`
@@ -16,7 +23,34 @@ function sanitizeFileName(name: string) {
   return cleaned || fallback
 }
 
+async function hasValidImageSignature(file: File) {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer())
+  const startsWith = (signature: number[]) =>
+    signature.every((byte, index) => bytes[index] === byte)
+
+  if (file.type === 'image/jpeg') return startsWith([0xff, 0xd8, 0xff])
+  if (file.type === 'image/png') return startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+  if (file.type === 'image/gif') {
+    return startsWith([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]) ||
+      startsWith([0x47, 0x49, 0x46, 0x38, 0x39, 0x61])
+  }
+  if (file.type === 'image/webp') {
+    const riff = startsWith([0x52, 0x49, 0x46, 0x46])
+    const webp =
+      bytes[8] === 0x57 &&
+      bytes[9] === 0x45 &&
+      bytes[10] === 0x42 &&
+      bytes[11] === 0x50
+    return riff && webp
+  }
+
+  return false
+}
+
 export async function POST(req: Request) {
+  const originError = sameOriginGuard(req)
+  if (originError) return originError
+
   const user = await getUser()
   if (!isAdminUser(user)) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
@@ -35,11 +69,14 @@ export async function POST(req: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Image file is required' }, { status: 400 })
   }
-  if (!file.type.startsWith('image/')) {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
     return NextResponse.json({ error: 'Only image files are allowed' }, { status: 400 })
   }
   if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
     return NextResponse.json({ error: 'Product images must be 250 KB or smaller.' }, { status: 413 })
+  }
+  if (!(await hasValidImageSignature(file))) {
+    return NextResponse.json({ error: 'Invalid image file' }, { status: 400 })
   }
 
   const uploadForm = new FormData()
@@ -59,7 +96,7 @@ export async function POST(req: Request) {
   const payload = await res.json().catch(() => ({}))
   if (!res.ok) {
     return NextResponse.json(
-      { error: payload?.message ?? 'ImageKit upload failed' },
+      { error: 'Image upload failed' },
       { status: res.status },
     )
   }

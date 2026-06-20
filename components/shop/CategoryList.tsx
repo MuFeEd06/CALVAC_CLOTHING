@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import type { Category, SiteSettings } from '@/types'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
@@ -58,10 +59,12 @@ function fadeIn(progress: number, start: number, end: number): React.CSSProperti
 export default function CategoryList({ categories, settings }: Props) {
   const { ref, progress, scrollY } = useSectionProgress()
   const viewport = useViewportKind()
+  const router = useRouter()
   const cfg = mergeDeviceConfig(settings ?? null, 'categories', CATEGORIES_DEFAULTS as any, viewport)
   const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
   const [activeIdx, setActiveIdx] = useState(0)
+  const [readyToNavigateIdx, setReadyToNavigateIdx] = useState<number | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const parallaxSpeed = getParallaxSpeed(settings ?? null)
   const parallaxY = (scrollY * 0.2 * parallaxSpeed).toFixed(1)
@@ -97,10 +100,12 @@ export default function CategoryList({ categories, settings }: Props) {
   // Clamp activeIdx when items change
   useEffect(() => {
     setActiveIdx(i => Math.min(i, Math.max(0, finalItems.length - 1)))
+    setReadyToNavigateIdx(null)
   }, [finalItems.length])
 
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault()
+    setReadyToNavigateIdx(null)
     if (e.deltaY > 0) setActiveIdx(i => Math.min(finalItems.length - 1, i + 1))
     else setActiveIdx(i => Math.max(0, i - 1))
   }, [finalItems.length])
@@ -114,8 +119,14 @@ export default function CategoryList({ categories, settings }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') setActiveIdx(i => Math.min(finalItems.length - 1, i + 1))
-      if (e.key === 'ArrowUp') setActiveIdx(i => Math.max(0, i - 1))
+      if (e.key === 'ArrowDown') {
+        setReadyToNavigateIdx(null)
+        setActiveIdx(i => Math.min(finalItems.length - 1, i + 1))
+      }
+      if (e.key === 'ArrowUp') {
+        setReadyToNavigateIdx(null)
+        setActiveIdx(i => Math.max(0, i - 1))
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -148,7 +159,22 @@ export default function CategoryList({ categories, settings }: Props) {
 
   // Active category slug for the SEE PRODUCT button link
   const activeCat = finalItems[activeIdx]
-  const activeSlug = (activeCat?.name ?? '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const getCategorySlug = (cat?: CategoryItem) => (cat?.name ?? '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  const getCategoryHref = (cat?: CategoryItem) => {
+    const slug = getCategorySlug(cat)
+    return slug ? `/shop?category=${slug}` : '/shop'
+  }
+  const activeHref = getCategoryHref(activeCat)
+  const handleCategoryPress = (index: number) => {
+    const item = finalItems[index]
+    if (!item) return
+    if (index === activeIdx && readyToNavigateIdx === index) {
+      router.push(getCategoryHref(item))
+      return
+    }
+    setActiveIdx(index)
+    setReadyToNavigateIdx(index)
+  }
 
   if (viewport !== 'desktop') {
     const isTablet = viewport === 'tablet'
@@ -171,7 +197,7 @@ export default function CategoryList({ categories, settings }: Props) {
                   const active = i === activeIdx
                   return (
                     <li key={cat.id} style={{ borderBottom: '1px solid #e8e8e5' }}>
-                      <button onClick={() => setActiveIdx(i)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'grid', gridTemplateColumns: '42px minmax(0,1fr) 52px', gap: 10, alignItems: 'center', padding: active ? '12px 0' : '10px 0', cursor: 'pointer', textAlign: 'left' }}>
+                      <button onClick={() => handleCategoryPress(i)} style={{ width: '100%', border: 'none', background: 'transparent', display: 'grid', gridTemplateColumns: '42px minmax(0,1fr) 52px', gap: 10, alignItems: 'center', padding: active ? '12px 0' : '10px 0', cursor: 'pointer', textAlign: 'left' }}>
                         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: active ? '#0d0d0d' : '#c9c9c5', fontFamily: 'Barlow,sans-serif' }}>[{String(i + 1).padStart(2, '0')}]</span>
                         <span style={{ minWidth: 0, fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: active ? 'clamp(58px,7vw,92px)' : 'clamp(34px,4vw,54px)', lineHeight: 0.96, color: active ? (cat.color ?? '#0d0d0d') : '#c8c8c5', textTransform: 'lowercase', transition: 'font-size 0.25s ease,color 0.25s ease', overflowWrap: 'anywhere' }}>{cat.name}</span>
                         <span style={{ fontSize: active ? 15 : 13, color: active ? '#888' : '#c8c8c5', textAlign: 'right', fontFamily: 'Barlow,sans-serif' }}>({cat.count})</span>
@@ -186,7 +212,7 @@ export default function CategoryList({ categories, settings }: Props) {
               </div>
               {vis(cfg, 'description') && <p style={{ margin: '24px 0 0', maxWidth: 420, fontSize: 16, lineHeight: 1.8, color: clr(cfg, 'description', '#666'), fontFamily: 'Barlow,sans-serif' }}>{description}</p>}
               {vis(cfg, 'see_product') && (
-                <Link href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'} style={{ marginTop: 28, display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`, borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: clr(cfg, 'see_product', '#0d0d0d'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
+                <Link href={activeHref} style={{ marginTop: 28, display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`, borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: clr(cfg, 'see_product', '#0d0d0d'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}>
                   {txt(cfg, 'see_product', 'SEE PRODUCT')} →
                 </Link>
               )}
@@ -242,7 +268,7 @@ export default function CategoryList({ categories, settings }: Props) {
               {visibleItems.map((cat, i) => (
                 <li key={cat.id} style={{ borderBottom: '1px solid #e8e8e5' }}>
                   <div
-                    onClick={() => setActiveIdx(i)}
+                    onClick={() => handleCategoryPress(i)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `${i === activeIdx ? 5 : 3}px 0`, cursor: 'pointer', transition: 'padding 0.3s' }}
                   >
                     <span style={{ fontFamily: 'Barlow,sans-serif', fontSize: 8, fontWeight: 600, letterSpacing: '1px', color: i === activeIdx ? '#0d0d0d' : '#ccc', width: 24, flexShrink: 0, transition: 'color 0.3s' }}>
@@ -270,7 +296,7 @@ export default function CategoryList({ categories, settings }: Props) {
           )}
           {vis(cfg, 'see_product') && (
             <Link
-              href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'}
+              href={activeHref}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, border: `1.5px solid ${clr(cfg, 'see_product', '#0d0d0d')}`, borderRadius: 40, padding: '9px 20px', fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none', color: clr(cfg, 'see_product', '#0d0d0d'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'nowrap' }}
             >
               {txt(cfg, 'see_product', 'SEE PRODUCT')} →
@@ -324,7 +350,7 @@ export default function CategoryList({ categories, settings }: Props) {
             {finalItems.map((cat, i) => (
               <li key={cat.id} style={{ borderBottom: '1px solid #e8e8e5' }}>
                 <div
-                  onClick={() => setActiveIdx(i)}
+                  onClick={() => handleCategoryPress(i)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: `${i === activeIdx ? 6 : 4}px 0`, cursor: 'pointer', transition: 'padding 0.3s',
@@ -382,7 +408,7 @@ export default function CategoryList({ categories, settings }: Props) {
         const seEl = cfg.elements.get('see_product') ?? { x: 1, y: 90 }
         return (
           <Link
-            href={activeSlug ? `/shop?category=${activeSlug}` : '/shop'}
+            href={activeHref}
             style={{
               position: 'absolute',
               left: `${seEl.x}%`,

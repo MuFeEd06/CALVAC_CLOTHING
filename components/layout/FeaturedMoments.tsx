@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { Product, SiteSettings } from '@/types'
 import { mergeDeviceConfig, vis, txt, imgUrl, clr, fsize } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
-import { clampedParallax } from '@/lib/useScrollAnimation'
+import { clampedParallax, usePrefersReducedMotion } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
 import { getParallaxSpeed } from '@/lib/siteSettings'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
@@ -48,7 +48,11 @@ function useSectionProgress() {
   return { ref, progress, scrollY }
 }
 
-function fadeIn(progress: number, start: number, end: number): React.CSSProperties {
+function fadeIn(progress: number, start: number, end: number, prefersReducedMotion = false): React.CSSProperties {
+  if (prefersReducedMotion) {
+    return { filter: 'none', opacity: 1, transform: 'none' }
+  }
+
   const p = Math.min(1, Math.max(0, (progress - start) / Math.max(0.01, end - start)))
   return {
     filter: `blur(${((1 - p) * 18).toFixed(1)}px)`,
@@ -67,6 +71,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
   const txCfg = getScrollTransitionConfig(settings ?? null)
   const exitStyle = scrollExitStyle(scrollY, txCfg)
   const parallaxSpeed = getParallaxSpeed(settings ?? null)
+  const prefersReducedMotion = usePrefersReducedMotion()
 
   // Slot-based product mapping
   const slotMap: Record<number, any> = {}
@@ -129,8 +134,8 @@ export default function FeaturedMoments({ products, settings }: Props) {
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(150px,0.58fr)', gap: 24, alignItems: 'start' }}>
               {vis(cfg, 'main_image') && (
                 <div>
-                  <div onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)} style={{ position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', transform: `translateY(-${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)} style={{ position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden', clipPath: imageShape, background: cfg.bgColor, cursor: p1?.slug ? 'pointer' : 'default' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', background: cfg.bgColor, transform: `translateY(-${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="34vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                     </div>
                   </div>
@@ -143,15 +148,15 @@ export default function FeaturedMoments({ products, settings }: Props) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 {vis(cfg, 'description') && <p style={{ ...exitStyle, flex: 1, fontSize: 14, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>{txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}</p>}
                 {vis(cfg, 'thumb_image') && (
-                  <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), clipPath: imageShape }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', transform: `translateY(-${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, clipPath: imageShape }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(-${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                     </div>
                   </div>
                 )}
                 {vis(cfg, 'product2_img') && (
-                  <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'product2_img','#5a5050'), clipPath: imageShape }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', transform: `translateY(-${tabletParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, clipPath: imageShape }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(-${tabletParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                     </div>
                   </div>
@@ -163,8 +168,29 @@ export default function FeaturedMoments({ products, settings }: Props) {
       )
     }
 
-    // Mobile: scroll outro on content, parallax-only images.
-    const mobileTextStyle: React.CSSProperties = exitStyle
+    // Mobile: intro blur/fade for text only, with a later outro so copy stays readable.
+    const mobileExitDelay = typeof window !== 'undefined' ? window.innerHeight * 0.82 : 600
+    const mobileExitY = Math.max(0, scrollY - mobileExitDelay)
+    const mobileExitRange = 520 / Math.max(0.1, txCfg.speed)
+    const mobileExitProgress = txCfg.enabled ? Math.min(1, mobileExitY / mobileExitRange) : 0
+    const mobileTextStyle = (start: number, end: number): React.CSSProperties => {
+      const introProgress = prefersReducedMotion
+        ? 1
+        : Math.min(1, Math.max(0, (progress - start) / Math.max(0.01, end - start)))
+
+      return {
+        filter: prefersReducedMotion ? 'none' : `blur(${((1 - introProgress) * 18).toFixed(1)}px)`,
+        opacity: Number((introProgress * (1 - mobileExitProgress)).toFixed(3)),
+        transform: prefersReducedMotion
+          ? 'none'
+          : `translateY(${(((1 - introProgress) * 28) - mobileExitProgress * txCfg.distance).toFixed(1)}px)`,
+        transition: introProgress > 0
+          ? 'filter 0.55s cubic-bezier(0.4,0,0.2,1),opacity 0.55s cubic-bezier(0.4,0,0.2,1),transform 0.55s cubic-bezier(0.4,0,0.2,1)'
+          : 'none',
+        willChange: 'filter,opacity,transform',
+        pointerEvents: mobileExitProgress > 0.6 ? 'none' : 'auto',
+      }
+    }
 
     return (
       <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, overflow: 'hidden', borderTop: '1px solid #e8e8e5', padding: '52px 20px 64px' }}>
@@ -174,7 +200,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
         <div style={{ position: 'relative' }}>
           {/* Headline */}
           {vis(cfg, 'headline') && (
-            <div style={{ ...mobileTextStyle }}>
+            <div style={{ ...mobileTextStyle(0.0, 0.36) }}>
               <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: 'clamp(54px,16vw,80px)', lineHeight: 0.91, letterSpacing: '-0.5px', color: clr(cfg,'headline','#0d0d0d'), margin: '0 0 18px', whiteSpace: 'pre-line' }}>
                 {txt(cfg, 'headline', 'All - about\nmoments ©26')}
               </h2>
@@ -183,7 +209,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
 
           {/* custom_text — body text */}
           {vis(cfg, 'custom_text') && (
-            <div style={{ ...mobileTextStyle, marginBottom: 16 }}>
+            <div style={{ ...mobileTextStyle(0.08, 0.44), marginBottom: 16 }}>
               <p style={{ fontSize: fsize(cfg,'custom_text',13), lineHeight: 1.75, color: clr(cfg,'custom_text','#555'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
                 {txt(cfg, 'custom_text', 'Crafted for the bold.\nWorn by the few.')}
               </p>
@@ -194,9 +220,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {vis(cfg, 'main_image') && (
             <div
               onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)}
-              style={{ position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: cfg.bgColor, cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', transform: `translateY(-${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', background: cfg.bgColor, transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                 {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
               </div>
               {/* White stripe at ~69% like desktop */}
@@ -205,7 +231,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
           )}
 
           {/* Caption + price row */}
-          <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
+          <div style={{ ...mobileTextStyle(0.16, 0.54), display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22 }}>
             {vis(cfg, 'caption1') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption1','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}
@@ -221,18 +247,18 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {/* Description + thumb row */}
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 22 }}>
             {vis(cfg, 'star') && (
-              <div className="animate-spin-slow" style={{ ...mobileTextStyle, color: clr(cfg,'star',cfg.accentColor), fontSize: 26, lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>
+              <div className="animate-spin-slow" style={{ ...mobileTextStyle(0.20, 0.58), color: clr(cfg,'star',cfg.accentColor), fontSize: 26, lineHeight: 1, flexShrink: 0, paddingTop: 2 }}>
                 {txt(cfg,'star','✦')}
               </div>
             )}
             {vis(cfg, 'description') && (
-              <p style={{ ...mobileTextStyle, flex: 1, fontSize: 13, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
+              <p style={{ ...mobileTextStyle(0.22, 0.62), flex: 1, fontSize: 13, lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
                 {txt(cfg,'description','Where Elegance Meets\nSustainability Luxury\nMade Accessible')}
               </p>
             )}
             {vis(cfg, 'thumb_image') && (
-              <div style={{ position: 'relative', width: 72, aspectRatio: '4 / 5', overflow: 'hidden', background: clr(cfg,'thumb_image','#c8c0b8'), flexShrink: 0, clipPath: imageShape }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', transform: `translateY(-${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'relative', width: 72, aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, flexShrink: 0, clipPath: imageShape }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                 </div>
               </div>
@@ -246,9 +272,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
           {vis(cfg, 'product2_img') && (
             <div
               onClick={() => p3?.slug && router.push(`/product/${p3.slug}`)}
-              style={{ position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: clr(cfg,'product2_img','#5a5050'), cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
+              style={{ position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: cfg.bgColor, cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '126%', transform: `translateY(-${mobileParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '126%', background: cfg.bgColor, transform: `translateY(${mobileParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                 {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
               </div>
@@ -256,7 +282,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
           )}
 
           {/* Caption2 + price2 row */}
-          <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div style={{ ...mobileTextStyle(0.34, 0.76), display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28 }}>
             {vis(cfg, 'caption2') && (
               <p style={{ fontSize: 11, color: clr(cfg,'caption2','#aaa'), fontStyle: 'italic', letterSpacing: '0.4px', fontFamily: 'Barlow,sans-serif', margin: 0, flex: 1, paddingRight: 12 }}>
                 {txt(cfg,'caption2', `©${p3?.name ?? 'International'} - just do it 2026`)}
@@ -271,7 +297,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
 
           {/* CTA */}
           {vis(cfg, 'learn_more') && (
-            <div style={{ ...mobileTextStyle, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ ...mobileTextStyle(0.42, 0.84), display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ display: 'flex', gap: 6 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.accentColor }} />
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#ddddd9' }} />
@@ -298,19 +324,19 @@ export default function FeaturedMoments({ products, settings }: Props) {
           <div style={{ ...exitStyle, display: 'flex', flexDirection: 'column', paddingRight: 32, paddingTop: 4, minHeight: 480 }}>
             <div style={{ flex: 1 }}>
               {vis(cfg, 'headline') && (
-                <div style={fadeIn(progress, 0.0, 0.35)}>
+                <div style={fadeIn(progress, 0.0, 0.35, prefersReducedMotion)}>
                   <h2 style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 900, fontSize: `clamp(44px,5.8vw,${fsize(cfg,'headline',82)}px)`, lineHeight: 0.91, letterSpacing: '-1.5px', color: clr(cfg,'headline','#0d0d0d'), margin: 0, whiteSpace: 'pre-line' }}>
                     {txt(cfg, 'headline', 'All - about\nmoments ©26')}
                   </h2>
                 </div>
               )}
               {vis(cfg, 'star') && (
-                <div style={{ ...fadeIn(progress, 0.08, 0.38), display: 'inline-block' }}>
+                <div style={{ ...fadeIn(progress, 0.08, 0.38, prefersReducedMotion), display: 'inline-block' }}>
                   <div className="animate-spin-slow" style={{ color: clr(cfg,'star',cfg.accentColor), fontSize: fsize(cfg,'star',32), marginTop: 18, lineHeight: 1 }}>✦</div>
                 </div>
               )}
               {vis(cfg, 'custom_text') && (
-                <div style={{ ...fadeIn(progress, 0.10, 0.40), marginTop: 20 }}>
+                <div style={{ ...fadeIn(progress, 0.10, 0.40, prefersReducedMotion), marginTop: 20 }}>
                   <p style={{ fontSize: fsize(cfg,'custom_text',13), lineHeight: 1.7, color: clr(cfg,'custom_text','#555'), fontFamily: 'Barlow,sans-serif', whiteSpace: 'pre-line', margin: 0 }}>
                     {txt(cfg, 'custom_text', 'Crafted for the bold.\nWorn by the few.')}
                   </p>
@@ -318,7 +344,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               )}
             </div>
             {vis(cfg, 'learn_more') && (
-              <div style={{ ...fadeIn(progress, 0.12, 0.42), marginTop: 'auto' }}>
+              <div style={{ ...fadeIn(progress, 0.12, 0.42, prefersReducedMotion), marginTop: 'auto' }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 18 }}>
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.accentColor }} />
                   <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ddddd9' }} />
@@ -337,9 +363,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
               {/* Slot 1 image — clickable */}
               <div
                 onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)}
-                style={{ width: '100%', height: 380, overflow: 'hidden', position: 'relative', background: clr(cfg,'main_image','#c8b890'), cursor: p1?.slug ? 'pointer' : 'default' }}
+                style={{ width: '100%', height: 380, overflow: 'hidden', position: 'relative', background: cfg.bgColor, cursor: p1?.slug ? 'pointer' : 'default' }}
               >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '190%', transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '190%', background: cfg.bgColor, transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img1Src
                     ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
                     : <div style={{ width: '100%', height: '100%', background: clr(cfg,'main_image','#c8b890'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>PRODUCT IMAGE</span></div>}
@@ -359,7 +385,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               </div>
               {/* Caption below col 2 image — gets exit style */}
               {vis(cfg, 'caption1') && (
-                <div style={{ ...fadeIn(progress, 0.20, 0.50), ...exitStyle }}>
+                <div style={{ ...fadeIn(progress, 0.20, 0.50, prefersReducedMotion), ...exitStyle }}>
                   <p style={{ marginTop: 12, fontSize: fsize(cfg,'caption1',11), color: clr(cfg,'caption1','#aaa'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>
                     {txt(cfg, 'caption1', `©${p1?.name ?? 'International'} - going distance 2026`)}
                   </p>
@@ -373,7 +399,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'start' }}>
               {/* Description text — exit style */}
               {vis(cfg, 'description') && (
-                <div style={{ ...fadeIn(progress, 0.15, 0.48), ...exitStyle }}>
+                <div style={{ ...fadeIn(progress, 0.15, 0.48, prefersReducedMotion), ...exitStyle }}>
                   <p style={{ fontSize: fsize(cfg,'description',12), lineHeight: 1.75, color: clr(cfg,'description','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, whiteSpace: 'pre-line' }}>
                     {txt(cfg, 'description', 'Where Elegance Meets\nSustainability Luxury\nMade Accessible')}
                   </p>
@@ -384,10 +410,10 @@ export default function FeaturedMoments({ products, settings }: Props) {
                 <div style={{ flexShrink: 0 }}>
                   <div
                     onClick={() => p2?.slug && router.push(`/product/${p2.slug}`)}
-                    style={{ width: 72, height: 88, overflow: 'hidden', position: 'relative', background: clr(cfg,'thumb_image','#c8c0b8'), cursor: p2?.slug ? 'pointer' : 'default' }}
+                    style={{ width: 72, height: 88, overflow: 'hidden', position: 'relative', background: cfg.bgColor, cursor: p2?.slug ? 'pointer' : 'default' }}
                   >
                     {/* FIX: start at top:-20% so parallax downward motion fills top gap */}
-                    <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '140%', transform: `translateY(${parallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                    <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '140%', background: cfg.bgColor, transform: `translateY(${parallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img2Src
                         ? <Image src={img2Src} alt={p2?.name ?? ''} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
                         : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c0a8,#909880)' }} />}
@@ -398,7 +424,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
             </div>
             {/* Price 1 — exit style */}
             {vis(cfg, 'price1') && (
-              <div style={{ ...fadeIn(progress, 0.22, 0.52), ...exitStyle, textAlign: 'right', marginTop: 8 }}>
+              <div style={{ ...fadeIn(progress, 0.22, 0.52, prefersReducedMotion), ...exitStyle, textAlign: 'right', marginTop: 8 }}>
                 <span style={{ fontFamily: '"Barlow Condensed",sans-serif', fontWeight: 700, fontSize: `clamp(24px,3vw,${fsize(cfg,'price1',38)}px)`, color: clr(cfg,'price1','#0d0d0d'), letterSpacing: '-0.5px' }}>{p1Price}</span>
               </div>
             )}
@@ -408,9 +434,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
               {vis(cfg, 'product2_img') && (
                 <div
                   onClick={() => p3?.slug && router.push(`/product/${p3.slug}`)}
-                  style={{ width: '76%', height: 194, clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', overflow: 'hidden', position: 'relative', background: clr(cfg,'product2_img','#4a4040'), cursor: p3?.slug ? 'pointer' : 'default' }}
+                  style={{ width: '76%', height: 194, clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', overflow: 'hidden', position: 'relative', background: cfg.bgColor, cursor: p3?.slug ? 'pointer' : 'default' }}
                 >
-                  <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '150%', transform: `translateY(${parallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '150%', background: cfg.bgColor, transform: `translateY(${parallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                     {img3Src
                       ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
                       : <div style={{ width: '100%', height: '100%', background: clr(cfg,'product2_img','#3a3030'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>PRODUCT 2</span></div>}
@@ -420,7 +446,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               )}
               {/* Caption 2 — exit style */}
               {vis(cfg, 'caption2') && (
-                <div style={{ ...fadeIn(progress, 0.30, 0.62), ...exitStyle }}>
+                <div style={{ ...fadeIn(progress, 0.30, 0.62, prefersReducedMotion), ...exitStyle }}>
                   <p style={{ fontSize: fsize(cfg,'caption2',11), color: clr(cfg,'caption2','#aaa'), letterSpacing: '0.5px', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic', margin: '10px 0 4px' }}>
                     {txt(cfg, 'caption2', `©${p3?.name ?? 'International'} - just do it 2026`)}
                   </p>

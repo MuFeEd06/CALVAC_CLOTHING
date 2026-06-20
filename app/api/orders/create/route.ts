@@ -10,6 +10,7 @@ import {
   validateCheckoutItems,
 } from '@/lib/checkoutValidation'
 import { getPaymentMethodSettings } from '@/lib/siteSettings'
+import { isRecord, readJsonBody, sameOriginGuard } from '@/lib/security'
 import type { PaymentMethod, PaymentStatus, OrderStatus } from '@/types'
 
 const PAYMENT_METHODS: PaymentMethod[] = ['whatsapp', 'cod', 'razorpay']
@@ -19,8 +20,15 @@ function isPaymentMethod(value: unknown): value is PaymentMethod {
 }
 
 export async function POST(req: Request) {
+  const originError = sameOriginGuard(req)
+  if (originError) return originError
+
   try {
-    const body = await req.json()
+    const body = await readJsonBody(req)
+    if (!isRecord(body)) {
+      return NextResponse.json({ error: 'Invalid checkout request' }, { status: 400 })
+    }
+
     const method = body.payment_method
 
     if (!isPaymentMethod(method)) {
@@ -79,8 +87,17 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ order })
   } catch (err: any) {
+    const message = typeof err?.message === 'string' ? err.message : ''
+    const checkoutError =
+      message.includes('required') ||
+      message.includes('Valid') ||
+      message.includes('Invalid') ||
+      message.includes('Cart') ||
+      message.includes('available') ||
+      message.includes('stock')
+
     return NextResponse.json(
-      { error: err?.message ?? 'Unable to create order' },
+      { error: checkoutError ? message : 'Unable to create order' },
       { status: 400 },
     )
   }

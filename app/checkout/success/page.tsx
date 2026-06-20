@@ -18,7 +18,7 @@ export default function SuccessPage({ searchParams }: { searchParams: { order?: 
         </div>
 
         <h1 style={{ fontFamily: '"Barlow Condensed", sans-serif', fontWeight: 900, fontSize: 36, margin: '0 0 8px', letterSpacing: '-0.5px' }}>
-          {isPaid ? 'Payment Confirmed!' : isWhatsApp ? 'Order Sent!' : 'Order Placed!'}
+          {isPaid ? 'Payment Received!' : isWhatsApp ? 'Order Sent!' : 'Order Placed!'}
         </h1>
 
         {order && (
@@ -40,7 +40,7 @@ export default function SuccessPage({ searchParams }: { searchParams: { order?: 
           )}
           {isPaid && (
             <p style={{ fontSize: 14, color: '#555', lineHeight: 1.7, margin: 0 }}>
-              Your payment was successful and your order is confirmed. We'll dispatch it soon!
+              Your payment response was received. Final payment confirmation is completed securely by Razorpay webhook before dispatch.
             </p>
           )}
         </div>

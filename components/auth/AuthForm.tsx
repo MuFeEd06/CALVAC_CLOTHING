@@ -50,8 +50,11 @@ export default function AuthForm({ mode }: Props) {
       router.push(redirect)
       router.refresh()
     } catch (err: any) {
-      const message = err.message ?? 'Something went wrong'
-      setError(message.toLowerCase().includes('email not confirmed') ? 'Please confirm your email before signing in.' : message)
+      setError(
+        mode === 'login'
+          ? 'Unable to sign in. Check your email, password, and email confirmation status.'
+          : 'Unable to create this account. Check your details and try again.',
+      )
     } finally {
       setLoading(false)
     }

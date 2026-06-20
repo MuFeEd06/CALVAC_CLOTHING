@@ -4,18 +4,31 @@ export const revalidate = 0
 import { NextResponse } from 'next/server'
 import { getUser } from '@/lib/auth'
 import { createSupabaseAdmin } from '@/lib/supabaseAdmin'
-import { createRazorpayOrder, RAZORPAY_ENABLED } from '@/lib/razorpay'
+import { createRazorpayOrder, RAZORPAY_ENABLED, RAZORPAY_PUBLIC_KEY_ID } from '@/lib/razorpay'
 import { validateCheckoutItems } from '@/lib/checkoutValidation'
 import { getPaymentMethodSettings } from '@/lib/siteSettings'
+import { getStringField, isRecord, readJsonBody, sameOriginGuard } from '@/lib/security'
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function POST(req: Request) {
+  const originError = sameOriginGuard(req)
+  if (originError) return originError
+
   if (!RAZORPAY_ENABLED) {
-    return NextResponse.json({ error: 'Razorpay not configured' }, { status: 503 })
+    return NextResponse.json({ error: 'Online payment is currently unavailable' }, { status: 503 })
   }
 
   try {
-    const { orderId } = await req.json()
-    if (!orderId) return NextResponse.json({ error: 'Missing order id' }, { status: 400 })
+    const body = await readJsonBody(req)
+    if (!isRecord(body)) {
+      return NextResponse.json({ error: 'Invalid payment request' }, { status: 400 })
+    }
+
+    const orderId = getStringField(body, 'orderId', 64)
+    if (!UUID_PATTERN.test(orderId)) {
+      return NextResponse.json({ error: 'Invalid order id' }, { status: 400 })
+    }
 
     const user = await getUser()
     if (!user) return NextResponse.json({ error: 'Sign in required' }, { status: 401 })
@@ -64,10 +77,15 @@ export async function POST(req: Request) {
 
     if (updateError) throw updateError
 
-    return NextResponse.json(razorpayOrder)
+    return NextResponse.json({
+      id: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      keyId: RAZORPAY_PUBLIC_KEY_ID,
+    })
   } catch (err: any) {
     return NextResponse.json(
-      { error: err?.message ?? 'Payment init failed' },
+      { error: 'Unable to start online payment' },
       { status: 500 },
     )
   }
