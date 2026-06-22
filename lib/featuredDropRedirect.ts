@@ -1,6 +1,7 @@
 import type { Category, SiteSettings } from '@/types'
 import { findCollectionBySlug, getCollectionItems } from '@/lib/collections'
 import { parsePageConfigs } from '@/lib/siteSettings'
+import { MANAGE_STORE_PATH } from '@/lib/routes'
 
 export type FeaturedDropRedirectType = 'all' | 'category' | 'collection' | 'custom'
 
@@ -36,7 +37,8 @@ export function isSafeInternalUrl(value: string) {
     value.startsWith('/') &&
     !value.startsWith('//') &&
     !value.startsWith('/api') &&
-    !value.startsWith('/admin')
+    !value.startsWith('/admin') &&
+    !value.startsWith(MANAGE_STORE_PATH)
   )
 }
 

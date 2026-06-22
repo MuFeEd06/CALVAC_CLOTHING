@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { MANAGE_STORE_LOGIN_PATH, MANAGE_STORE_PATH } from '@/lib/routes'
 
 const isProduction = process.env.NODE_ENV === 'production'
 
@@ -56,8 +57,12 @@ function applySecurityHeaders(res: NextResponse, req: NextRequest) {
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: { headers: req.headers } })
+  const pathname = req.nextUrl.pathname
+  const isAccountRoute = pathname.startsWith('/account')
+  const isManageStoreRoute = pathname === MANAGE_STORE_PATH || pathname.startsWith(`${MANAGE_STORE_PATH}/`)
+  const isManageStoreLogin = pathname === MANAGE_STORE_LOGIN_PATH
 
-  if (req.nextUrl.pathname.startsWith('/account')) {
+  if (isAccountRoute || (isManageStoreRoute && !isManageStoreLogin)) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -83,9 +88,13 @@ export async function middleware(req: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (!user && isManageStoreRoute && !isManageStoreLogin) {
+      return applySecurityHeaders(NextResponse.redirect(new URL(MANAGE_STORE_LOGIN_PATH, req.url)), req)
+    }
+
+    if (!user && isAccountRoute) {
       const loginUrl = new URL('/login', req.url)
-      loginUrl.searchParams.set('redirect', req.nextUrl.pathname)
+      loginUrl.searchParams.set('redirect', pathname)
       return applySecurityHeaders(NextResponse.redirect(loginUrl), req)
     }
   }
