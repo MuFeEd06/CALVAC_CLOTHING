@@ -7,6 +7,7 @@ import { getUser, getUserProfile } from '@/lib/auth'
 import { createSupabaseServer } from '@/lib/auth'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import SignOutButton from '@/components/auth/SignOutButton'
 import { getCategories, getSiteSettings } from '@/lib/db'
 import type { Metadata } from 'next'
 
@@ -122,11 +123,10 @@ export default async function AccountPage() {
 
           {/* Sign out */}
           <div style={{ marginTop: 24, textAlign: 'center' }}>
-            <form action="/api/auth/signout" method="POST">
-              <button type="submit" style={{ fontSize: 13, color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Barlow, sans-serif' }}>
-                Sign out
-              </button>
-            </form>
+            <SignOutButton
+              style={{ fontSize: 13, color: '#aaa', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Barlow, sans-serif' }}
+              errorStyle={{ fontSize: 12, color: '#c0392b', marginTop: 8 }}
+            />
           </div>
 
         </div>

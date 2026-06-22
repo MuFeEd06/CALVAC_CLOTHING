@@ -7,6 +7,8 @@ import { X, Upload } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getCollectionItems } from '@/lib/collections'
 import { formatProductImageLimit, getOptimizedProductImageUrl, MAX_PRODUCT_IMAGE_BYTES } from '@/lib/productImages'
+import { TOP_FOCUSED_IMAGE_CLASS_NAME } from '@/lib/contentImageFocus'
+import { manageStorePath } from '@/lib/routes'
 import type { Product, Category, ProductColor, SiteSettings } from '@/types'
 
 interface ProductFormProps {
@@ -160,7 +162,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
       }
 
       await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
-      router.push('/admin/products')
+      router.push(manageStorePath('/products'))
       router.refresh()
     } catch (err: any) {
       alert(err.message ?? 'Something went wrong')
@@ -304,7 +306,7 @@ export default function ProductForm({ product, categories, settings }: ProductFo
             <div className="grid grid-cols-2 gap-2">
               {images.map((url, i) => (
                 <div key={i} className="relative aspect-square bg-[var(--gray-light)] rounded-lg overflow-hidden group">
-                  <Image src={getOptimizedProductImageUrl(url, { width: 240 })} alt="" fill className="object-cover" />
+                  <Image src={getOptimizedProductImageUrl(url, { width: 240 })} alt="" fill className={TOP_FOCUSED_IMAGE_CLASS_NAME} />
                   <button type="button" onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
                   {i === 0 && <span className="absolute bottom-1 left-1 text-[9px] bg-black text-white px-1.5 py-0.5 rounded font-600">MAIN</span>}
                 </div>

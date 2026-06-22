@@ -4,24 +4,32 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Package, ShoppingBag, Settings, LogOut, ExternalLink, Menu, X } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { signOutCurrentUser } from '@/lib/clientAuth'
+import { manageStorePath } from '@/lib/routes'
 
 const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: manageStorePath(), label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: manageStorePath('/products'), label: 'Products', icon: Package },
+  { href: manageStorePath('/orders'), label: 'Orders', icon: ShoppingBag },
+  { href: manageStorePath('/settings'), label: 'Settings', icon: Settings },
 ]
 
 export default function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [signOutError, setSignOutError] = useState('')
 
   const handleLogout = async () => {
     setOpen(false)
-    await supabase.auth.signOut()
-    router.push('/admin/login')
+    setSignOutError('')
+    try {
+      await signOutCurrentUser()
+      router.replace('/')
+      router.refresh()
+    } catch {
+      setSignOutError('Unable to sign out. Please try again.')
+    }
   }
 
   const isActive = (href: string, exact = false) =>
@@ -86,7 +94,7 @@ export default function AdminSidebar() {
             >
               <item.icon size={16} />
               {item.label}
-              {item.href === '/admin/orders' && (
+              {item.href === manageStorePath('/orders') && (
                 <span className="ml-auto w-5 h-5 bg-[var(--orange)] rounded-full text-[10px] font-700 flex items-center justify-center text-white">!</span>
               )}
             </Link>
@@ -106,12 +114,16 @@ export default function AdminSidebar() {
           View Site
         </Link>
         <button
+          type="button"
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/50 hover:text-red-400 hover:bg-red-500/10 transition-all"
         >
           <LogOut size={16} />
           Sign Out
         </button>
+        {signOutError && (
+          <p className="px-3 text-xs text-red-300 leading-snug">{signOutError}</p>
+        )}
       </div>
       </aside>
     </>

@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
 import { getProductRatingSeed } from '@/lib/productRating'
+import { TOP_FOCUSED_IMAGE_CLASS_NAME } from '@/lib/contentImageFocus'
 import type { Product } from '@/types'
 
 interface ProductCardProps {
@@ -31,7 +32,7 @@ export default function ProductCard({ product, className = '' }: ProductCardProp
             alt={product.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`${TOP_FOCUSED_IMAGE_CLASS_NAME} transition-transform duration-500 group-hover:scale-105`}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-[var(--gray-mid)] text-[10px] tracking-widest uppercase">

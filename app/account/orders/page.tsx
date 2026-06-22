@@ -10,6 +10,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { getCategories, getSiteSettings } from '@/lib/db'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import { TOP_FOCUSED_OBJECT_POSITION } from '@/lib/contentImageFocus'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = { title: 'My Orders — CALVAC' }
@@ -97,7 +98,7 @@ export default async function OrdersPage() {
                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div style={{ width: 52, height: 60, borderRadius: 8, overflow: 'hidden', background: '#f5f5f3', flexShrink: 0 }}>
                             {item.product_image && (
-                              <Image src={getOptimizedProductImageUrl(item.product_image, { width: 140 })} alt={item.product_name} width={52} height={60} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />
+                              <Image src={getOptimizedProductImageUrl(item.product_image, { width: 140 })} alt={item.product_name} width={52} height={60} style={{ objectFit: 'cover', objectPosition: TOP_FOCUSED_OBJECT_POSITION, width: '100%', height: '100%' }} />
                             )}
                           </div>
                           <div style={{ flex: 1 }}>

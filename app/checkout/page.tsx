@@ -9,6 +9,8 @@ import { supabase } from '@/lib/supabase'
 import { buildWhatsAppOrderMessage, openWhatsApp } from '@/lib/whatsapp'
 import { DEFAULT_PAYMENT_METHODS, getPaymentMethodSettings } from '@/lib/siteSettings'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import { signOutCurrentUser } from '@/lib/clientAuth'
+import { TOP_FOCUSED_OBJECT_POSITION } from '@/lib/contentImageFocus'
 import type { DeliveryAddress, Order, PaymentMethod, PaymentMethodSettings } from '@/types'
 
 type Step = 'details' | 'payment'
@@ -160,8 +162,12 @@ export default function CheckoutPage() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    try {
+      await signOutCurrentUser()
+      setUser(null)
+    } catch {
+      setAuthError('Unable to sign out. Please try again.')
+    }
   }
 
   const validateAddr = () => {
@@ -483,7 +489,7 @@ export default function CheckoutPage() {
                 {items.map((item, i) => (
                   <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: i < items.length - 1 ? '1px solid #f0f0ee' : 'none' }}>
                     <div style={{ width: 64, height: 72, borderRadius: 8, overflow: 'hidden', background: '#f0f0ee', flexShrink: 0 }}>
-                      {item.product.images[0] && <Image src={getOptimizedProductImageUrl(item.product.images[0], { width: 160 })} alt={item.product.name} width={64} height={72} style={{ objectFit: 'cover', width: '100%', height: '100%' }} />}
+                      {item.product.images[0] && <Image src={getOptimizedProductImageUrl(item.product.images[0], { width: 160 })} alt={item.product.name} width={64} height={72} style={{ objectFit: 'cover', objectPosition: TOP_FOCUSED_OBJECT_POSITION, width: '100%', height: '100%' }} />}
                     </div>
                     <div style={{ flex: 1 }}>
                       <p style={{ fontWeight: 600, fontSize: 13, margin: '0 0 4px' }}>{item.product.name}</p>

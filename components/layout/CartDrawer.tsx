@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import { TOP_FOCUSED_OBJECT_POSITION } from '@/lib/contentImageFocus'
 
 interface Props { open: boolean; onClose: () => void }
 
@@ -104,7 +105,7 @@ export default function CartDrawer({ open, onClose }: Props) {
                         src={getOptimizedProductImageUrl(item.product.images[0], { width: 160 })}
                         alt={item.product.name}
                         width={68} height={80}
-                        style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                        style={{ objectFit: 'cover', objectPosition: TOP_FOCUSED_OBJECT_POSITION, width: '100%', height: '100%' }}
                       />
                     )}
                   </div>

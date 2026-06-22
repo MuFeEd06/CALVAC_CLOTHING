@@ -11,5 +11,9 @@ export async function POST(req: Request) {
 
   const supabase = createSupabaseServer()
   await supabase.auth.signOut()
-  return NextResponse.redirect(new URL('/', req.url))
+  return NextResponse.redirect(new URL('/', req.url), 303)
+}
+
+export async function GET(req: Request) {
+  return NextResponse.redirect(new URL('/', req.url), 303)
 }
