@@ -13,6 +13,14 @@ import {
 import { clampParallaxSpeed, DEFAULT_PAYMENT_METHODS, getParallaxSpeed, getPaymentMethodSettings, getPolicySettings } from '@/lib/siteSettings'
 import { getCollectionItems } from '@/lib/collections'
 import { DEFAULT_FEATURED_DROP_REDIRECT, getFeaturedDropRedirect } from '@/lib/featuredDropRedirect'
+import {
+  CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION,
+  CAROUSEL_IMAGE_FOCUS_OPTIONS,
+  buildCarouselImageFocusPatch,
+  getCarouselImageFocusValue,
+  getCarouselImageFocusWarning,
+  resolveCarouselImageObjectPosition,
+} from '@/lib/carouselImageFocus'
 import type { FeaturedDropRedirect } from '@/lib/featuredDropRedirect'
 import type { Category, PaymentMethodSettings, PolicyPageContent } from '@/types'
 import type { PolicyKey } from '@/lib/siteSettings'
@@ -37,6 +45,7 @@ interface PageElement {
   imageUrl?: string; width?: number; height?: number
   isImage?: boolean; type?: 'product_card' | 'avatars' | 'default'
   zoom?: number; objectPosition?: string
+  imageFocus?: string; imageObjectPosition?: string
 }
 
 interface PageConfig {
@@ -57,6 +66,7 @@ interface MobileElement {
   content?: string; imageUrl?: string
   fontSize?: number; color?: string
   bgColor?: string; fullWidth?: boolean
+  imageFocus?: string; imageObjectPosition?: string; objectPosition?: string
   hint?: string   // small description shown in editor
 }
 
@@ -190,6 +200,66 @@ function Field({ label, value, onChange, placeholder, hint, multiline }: {
   )
 }
 
+function CarouselImageFocusEditor({
+  selected,
+  accentColor,
+  onPatch,
+}: {
+  selected: PageElement
+  accentColor: string
+  onPatch: (patch: Partial<PageElement>) => void
+}) {
+  const resolved = resolveCarouselImageObjectPosition(selected)
+  const selectedFocus = getCarouselImageFocusValue(selected)
+  const selectedLabel = selectedFocus === 'custom'
+    ? 'Custom'
+    : CAROUSEL_IMAGE_FOCUS_OPTIONS.find(option => option.value === selectedFocus)?.label ?? 'Top'
+  const customValue = selected.imageFocus === 'custom'
+    ? selected.imageObjectPosition ?? selected.objectPosition ?? ''
+    : selected.imageObjectPosition ?? selected.objectPosition ?? resolved
+  const warning = getCarouselImageFocusWarning(selected)
+
+  return (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4, marginBottom: 7 }}>
+        {CAROUSEL_IMAGE_FOCUS_OPTIONS.map(option => {
+          const active = selectedFocus === option.value
+          return (
+            <button
+              key={option.value}
+              onClick={() => onPatch(buildCarouselImageFocusPatch(option.value))}
+              style={{
+                padding: '5px 4px',
+                fontSize: 9,
+                borderRadius: 5,
+                border: `1px solid ${active ? accentColor : '#e8e8e5'}`,
+                background: active ? '#fff4f0' : '#fff',
+                cursor: 'pointer',
+                color: active ? accentColor : '#666',
+                fontFamily: 'Barlow,sans-serif',
+              }}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, fontSize: 10, color: '#888', fontFamily: 'Barlow,sans-serif' }}>
+        <span>Selected: {selectedLabel}</span>
+        <span style={{ fontFamily: 'monospace', color: '#555' }}>Resolved: {resolved}</span>
+      </div>
+      <input
+        type="text"
+        value={customValue}
+        onChange={e => onPatch(buildCarouselImageFocusPatch('custom', e.target.value))}
+        placeholder={`Custom, e.g. ${CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION}`}
+        style={{ width: '100%', border: `1px solid ${warning ? '#d33' : '#e8e8e5'}`, borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }}
+      />
+      {warning && <p style={{ margin: '5px 0 0', color: '#b3261e', fontSize: 10, lineHeight: 1.4, fontFamily: 'Barlow,sans-serif' }}>{warning}</p>}
+    </>
+  )
+}
+
 // ─────────────────────────────────────────────────────────────
 //  DESKTOP CANVAS (unchanged from original)
 // ─────────────────────────────────────────────────────────────
@@ -243,10 +313,11 @@ function PageBackground({ config }: { config: PageConfig }) {
     )
   }
   if (config.id === 'collections') {
+    const collectionBackground = config.bgColor || '#ffffff'
     return (
       <>
         <div style={{ position: 'absolute', left: '44%', top: 0, bottom: 0, width: 1, background: 'rgba(0,0,0,0.08)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', left: '1%', top: '12%', width: '38%', height: '55%', background: 'rgba(0,0,0,0.05)', clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: '1%', top: '12%', width: '38%', height: '55%', background: collectionBackground, clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', pointerEvents: 'none' }} />
       </>
     )
   }
@@ -306,6 +377,7 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight,
     if (['product_card', 'new_drop', 'avatars', 'orange_star', 'tag_right', 'stat', 'stat_label', 'scroll_ind'].includes(el.id)) return 35
     return 10
   }
+  const collectionBackground = config.bgColor || '#ffffff'
 
   return (
     <div ref={canvasRef} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onPointerLeave={onPointerUp}
@@ -318,12 +390,17 @@ function DesktopPageCanvas({ config, selectedId, onSelect, onDrag, canvasHeight,
       <div style={{ position: 'absolute', top: 8, left: 8, zIndex: 50, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 6, padding: '3px 10px', fontSize: 10, letterSpacing: '1px', fontFamily: 'Barlow,sans-serif', pointerEvents: 'none' }}>{config.label}</div>
       {config.elements.filter(e => e.visible).map(e => {
         const isSelected = selectedId === e.id
+        const imageObjectPosition = config.id === 'carousel' ? resolveCarouselImageObjectPosition(e) : e.objectPosition ?? 'top center'
+        const imageTransformOrigin = config.id === 'carousel' ? imageObjectPosition : 'center top'
+        const imageBackground = config.id === 'collections'
+          ? collectionBackground
+          : e.imageUrl ? 'transparent' : (e.color ?? '#ddd')
         return (
           <div key={e.id} onPointerDown={ev => onPointerDown(ev, e.id)} title={e.label}
             style={{ position: 'absolute', left: `${e.x}%`, top: `${e.y}%`, cursor: 'grab', touchAction: 'none', zIndex: isSelected ? 60 : canvasLayer(e), outline: isSelected ? `2px dashed ${config.accentColor}` : '2px dashed transparent', outlineOffset: 2, borderRadius: 3, transition: 'outline 0.15s' }}>
             {e.isImage ? (
-              <div style={{ width: `${((e.width ?? 20) / 100) * canvasW}px`, height: `${(e.height ?? 30) * (CANVAS_H / 100)}px`, background: e.imageUrl ? 'transparent' : (e.color ?? '#ddd'), borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minWidth: 40, minHeight: 40 }}>
-                {e.imageUrl && <img src={e.imageUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: config.id === 'hero' && device === 'mobile' && e.id === 'model_image' ? 'contain' : 'cover', objectPosition: e.objectPosition ?? 'top center', transform: e.zoom && e.zoom !== 1 ? `scale(${e.zoom})` : undefined, transformOrigin: 'center top', pointerEvents: 'none' }} />}
+              <div style={{ width: `${((e.width ?? 20) / 100) * canvasW}px`, height: `${(e.height ?? 30) * (CANVAS_H / 100)}px`, background: imageBackground, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', minWidth: 40, minHeight: 40 }}>
+                {e.imageUrl && <img src={e.imageUrl} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: config.id === 'hero' && device === 'mobile' && e.id === 'model_image' ? 'contain' : 'cover', objectPosition: imageObjectPosition, transform: e.zoom && e.zoom !== 1 ? `scale(${e.zoom})` : undefined, transformOrigin: imageTransformOrigin, pointerEvents: 'none' }} />}
                 {!e.imageUrl && <div style={{ textAlign: 'center', padding: 4 }}><ImageIcon size={14} color="rgba(255,255,255,0.4)" /><p style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)', margin: '3px 0 0', fontFamily: 'Barlow,sans-serif', letterSpacing: '1px', textTransform: 'uppercase' }}>{e.label}</p></div>}
               </div>
             ) : e.type === 'product_card' ? (
@@ -361,6 +438,7 @@ function TabletSectionPreview({ config, categoryItems }: { config: PageConfig; c
   const heroImage = imageEls[0]
   const title = textEls.find(e => e.id.includes('headline') || e.id.includes('title') || e.id.includes('feat_title')) ?? textEls[0]
   const body = textEls.find(e => e.id.includes('description') || e.id.includes('intro') || e.id.includes('custom_text') || e.id.includes('feat_desc'))
+  const collectionBackground = config.bgColor || '#ffffff'
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -378,7 +456,7 @@ function TabletSectionPreview({ config, categoryItems }: { config: PageConfig; c
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '10px 22px', fontSize: 11, fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase' }}>Shop now -&gt;</div>
           </div>
           <div style={{ minWidth: 0, height: '100%', display: 'grid', gridTemplateRows: config.id === 'categories' ? '1fr auto' : '1fr', gap: 18 }}>
-            <div style={{ minHeight: 0, overflow: 'hidden', background: heroImage?.imageUrl ? 'transparent' : (heroImage?.color ?? '#e2e0dc'), clipPath: 'polygon(4% 0%,82% 0%,96% 34%,96% 100%,18% 100%,4% 64%)' }}>
+            <div style={{ minHeight: 0, overflow: 'hidden', background: config.id === 'collections' ? collectionBackground : heroImage?.imageUrl ? 'transparent' : (heroImage?.color ?? '#e2e0dc'), clipPath: 'polygon(4% 0%,82% 0%,96% 34%,96% 100%,18% 100%,4% 64%)' }}>
               {heroImage?.imageUrl ? <img src={heroImage.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: heroImage.objectPosition ?? 'top center' }} /> : null}
             </div>
             {config.id === 'categories' && (
@@ -446,6 +524,7 @@ function DeviceElementPanel({
       </div>
     )
   }
+  const selectedPreviewObjectPosition = pageId === 'carousel' ? resolveCarouselImageObjectPosition(selected) : 'top center'
 
   return (
     <>
@@ -472,7 +551,7 @@ function DeviceElementPanel({
           <PropRow label="Image">
             {selected.imageUrl ? (
               <div style={{ position: 'relative', marginBottom: 8 }}>
-                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', objectPosition: 'top center', borderRadius: 8 }} />
+                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', objectPosition: selectedPreviewObjectPosition, transformOrigin: selectedPreviewObjectPosition, borderRadius: 8 }} />
                 <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>x</button>
               </div>
             ) : (
@@ -502,12 +581,18 @@ function DeviceElementPanel({
             </div>
           </PropRow>
           <PropRow label="Image Focus">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
-              {[{ label: 'Top', val: 'top center' }, { label: 'Center', val: 'center center' }, { label: 'Bottom', val: 'bottom center' }, { label: 'Left', val: 'center left' }, { label: 'Right', val: 'center right' }, { label: 'Top L', val: 'top left' }].map(opt => (
-                <button key={opt.val} onClick={() => onUpdate(selected.id, { objectPosition: opt.val })} style={{ padding: '5px 4px', fontSize: 10, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === opt.val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#666', fontFamily: 'Barlow,sans-serif' }}>{opt.label}</button>
-              ))}
-            </div>
-            <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+            {pageId === 'carousel' ? (
+              <CarouselImageFocusEditor selected={selected} accentColor="#f04e0f" onPatch={patch => onUpdate(selected.id, patch)} />
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
+                  {[{ label: 'Top', val: 'top center' }, { label: 'Center', val: 'center center' }, { label: 'Bottom', val: 'bottom center' }, { label: 'Left', val: 'center left' }, { label: 'Right', val: 'center right' }, { label: 'Top L', val: 'top left' }].map(opt => (
+                    <button key={opt.val} onClick={() => onUpdate(selected.id, { objectPosition: opt.val })} style={{ padding: '5px 4px', fontSize: 10, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === opt.val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#666', fontFamily: 'Barlow,sans-serif' }}>{opt.label}</button>
+                  ))}
+                </div>
+                <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+              </>
+            )}
           </PropRow>
           <PropRow label="Placeholder Color">
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -682,6 +767,7 @@ function MobilePhoneFrame({ children, bgColor }: { children: React.ReactNode; bg
 
 function MobileSectionPreview({ section, categoryItems }: { section: MobileSectionConfig; categoryItems: CategoryItem[] }) {
   const isFooter = section.bgColor === '#0d0d0d'
+  const collectionBackground = section.bgColor || '#ffffff'
 
   return (
     <MobilePhoneFrame bgColor={section.bgColor}>
@@ -699,8 +785,11 @@ function MobileSectionPreview({ section, categoryItems }: { section: MobileSecti
       <div style={{ padding: section.id === 'mobile_footer' ? '20px 14px 24px' : '14px 14px 20px' }}>
         {section.elements.filter(e => e.visible).map(el => {
           if (el.type === 'image') {
+            const imageBackground = section.id === 'mobile_collections'
+              ? el.imageUrl ? `${collectionBackground} url(${el.imageUrl}) center top/cover` : collectionBackground
+              : el.imageUrl ? `url(${el.imageUrl}) center top/cover` : (el.color ?? '#ddd')
             return (
-              <div key={el.id} style={{ width: '100%', height: section.id === 'mobile_hero' ? 220 : 160, background: el.imageUrl ? `url(${el.imageUrl}) center top/cover` : (el.color ?? '#ddd'), borderRadius: 8, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <div key={el.id} style={{ width: '100%', height: section.id === 'mobile_hero' ? 220 : 160, background: imageBackground, borderRadius: 8, marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {!el.imageUrl && <div style={{ textAlign: 'center' }}><ImageIcon size={18} color="rgba(255,255,255,0.3)" /><p style={{ fontSize: 7, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>{el.label}</p></div>}
               </div>
             )
@@ -1048,10 +1137,11 @@ function MobileCarouselPreview({ cfg, accentColor, selectedId, onSelect }: { cfg
             const h = isActive ? 128 : 96
             const bg = cardEl?.color ?? '#c8b890'
             const src = cardEl?.imageUrl ?? ''
+            const imageObjectPosition = resolveCarouselImageObjectPosition(cardEl)
             const dist = Math.abs(i - activeCard)
             return (
               <ElWrap key={cardId} id={cardId} selectedId={selectedId} onSelect={(id) => { onSelect?.(id); setActiveCard(i) }} style={{ flexShrink: 0, width: w, height: h, overflow: 'hidden', background: bg, clipPath: CLIP_PATH, cursor: 'pointer', transform: `translateY(${isActive ? -14 : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.9 : 0.6, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)', position: 'relative' }}>
-                {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : <div style={{ width: '100%', height: '100%', background: bg }} />}
+                {src ? <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: imageObjectPosition, transformOrigin: imageObjectPosition, pointerEvents: 'none' }} /> : <div style={{ width: '100%', height: '100%', background: bg }} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                 {isActive && v('wear') && <ElWrap id="wear" selectedId={selectedId} onSelect={onSelect} style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center' }}><span style={{ fontSize: 6, color: el('wear')?.color ?? 'rgba(255,255,255,0.9)', fontFamily: 'Barlow,sans-serif' }}>{el('wear')?.content ?? '[Wear the Moment]'}</span></ElWrap>}
               </ElWrap>
@@ -1072,6 +1162,7 @@ function MobileCollectionsPreview({ cfg, accentColor, selectedId, onSelect }: { 
   const v  = (id: string) => el(id)?.visible !== false
   const modelSrc = el('model_image')?.imageUrl ?? ''
   const featSrc  = el('featured_img')?.imageUrl ?? ''
+  const collectionBackground = cfg.bgColor || '#ffffff'
 
   return (
     <PhoneShell bgColor={cfg.bgColor}>
@@ -1079,11 +1170,11 @@ function MobileCollectionsPreview({ cfg, accentColor, selectedId, onSelect }: { 
         {v('intro') && <ElWrap id="intro" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 8, lineHeight: 1.8, color: el('intro')?.color ?? '#777', fontFamily: 'Barlow,sans-serif', margin: '0 0 10px', textAlign: 'center' }}>{el('intro')?.content ?? ''}</p></ElWrap>}
         {v('model_image') && (
           <ElWrap id="model_image" selectedId={selectedId} onSelect={onSelect} style={{ marginBottom: 10 }}>
-            <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', height: 120, overflow: 'hidden', background: el('model_image')?.color ?? '#d8d4cc' }}>
-              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
+            <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', height: 120, overflow: 'hidden', background: collectionBackground }}>
+              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: collectionBackground, clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
               <div style={{ position: 'relative', zIndex: 2, height: '100%' }}>
                 {modelSrc ? <img src={modelSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', pointerEvents: 'none' }} /> : null}
-                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 6, background: cfg.bgColor, zIndex: 3 }} />
+                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 6, background: collectionBackground, zIndex: 3 }} />
               </div>
             </div>
             {v('caption') && <ElWrap id="caption" selectedId={selectedId} onSelect={onSelect}><p style={{ margin: '6px 0 0', fontSize: 7, color: el('caption')?.color ?? '#aaa', fontFamily: 'Barlow,sans-serif', fontStyle: 'italic' }}>{el('caption')?.content ?? ''}</p></ElWrap>}
@@ -1095,7 +1186,7 @@ function MobileCollectionsPreview({ cfg, accentColor, selectedId, onSelect }: { 
             {v('feat_desc') && <ElWrap id="feat_desc" selectedId={selectedId} onSelect={onSelect}><p style={{ fontSize: 8, lineHeight: 1.7, color: el('feat_desc')?.color ?? '#888', fontFamily: 'Barlow,sans-serif', margin: '0 0 8px' }}>{el('feat_desc')?.content ?? ''}</p></ElWrap>}
             {v('feat_btn') && <ElWrap id="feat_btn" selectedId={selectedId} onSelect={onSelect} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, border: '1.5px solid #0d0d0d', borderRadius: 20, padding: '3px 9px' }}><span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{el('feat_btn')?.content ?? 'GET STARTED'} →</span></ElWrap>}
           </div>
-          <ElWrap id="featured_img" selectedId={selectedId} onSelect={onSelect} style={{ width: 56, height: 56, overflow: 'hidden', background: el('featured_img')?.color ?? '#b8c8b8', clipPath: FEAT_POLY }}>
+          <ElWrap id="featured_img" selectedId={selectedId} onSelect={onSelect} style={{ width: 56, height: 56, overflow: 'hidden', background: collectionBackground, clipPath: FEAT_POLY }}>
             {featSrc ? <img src={featSrc} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} /> : null}
           </ElWrap>
         </div>
@@ -1158,6 +1249,7 @@ function MobileElementPanel({
       </div>
     )
   }
+  const selectedPreviewObjectPosition = pageId === 'carousel' ? resolveCarouselImageObjectPosition(selected) : 'top center'
 
   return (
     <>
@@ -1188,7 +1280,7 @@ function MobileElementPanel({
           <PropRow label="Image">
             {selected.imageUrl ? (
               <div style={{ position: 'relative', marginBottom: 8 }}>
-                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', objectPosition: 'top center', borderRadius: 8 }} />
+                <img src={selected.imageUrl} alt="" style={{ width: '100%', height: 100, objectFit: 'cover', objectPosition: selectedPreviewObjectPosition, transformOrigin: selectedPreviewObjectPosition, borderRadius: 8 }} />
                 <button onClick={() => onUpdate(selected.id, { imageUrl: '' })} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>×</button>
               </div>
             ) : (
@@ -1218,12 +1310,18 @@ function MobileElementPanel({
             </div>
           </PropRow>
           <PropRow label="Image Focus">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 5 }}>
-              {[['Top','top center'],['Center','center center'],['Bottom','bottom center'],['Left','center left'],['Right','center right'],['Top L','top left']].map(([lbl,val]) => (
-                <button key={val} onClick={() => onUpdate(selected.id, { objectPosition: val })} style={{ padding: '4px', fontSize: 9, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === val ? accentColor : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === val ? accentColor : '#666', fontFamily: 'Barlow,sans-serif' }}>{lbl}</button>
-              ))}
-            </div>
-            <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+            {pageId === 'carousel' ? (
+              <CarouselImageFocusEditor selected={selected} accentColor={accentColor} onPatch={patch => onUpdate(selected.id, patch)} />
+            ) : (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 5 }}>
+                  {[['Top','top center'],['Center','center center'],['Bottom','bottom center'],['Left','center left'],['Right','center right'],['Top L','top left']].map(([lbl,val]) => (
+                    <button key={val} onClick={() => onUpdate(selected.id, { objectPosition: val })} style={{ padding: '4px', fontSize: 9, borderRadius: 5, border: `1px solid ${(selected.objectPosition ?? 'top center') === val ? accentColor : '#e8e8e5'}`, background: (selected.objectPosition ?? 'top center') === val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selected.objectPosition ?? 'top center') === val ? accentColor : '#666', fontFamily: 'Barlow,sans-serif' }}>{lbl}</button>
+                  ))}
+                </div>
+                <input type="text" value={selected.objectPosition ?? 'top center'} onChange={e => onUpdate(selected.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+              </>
+            )}
           </PropRow>
           <PropRow label="Placeholder Color">
             <div style={{ display: 'flex', gap: 8 }}>
@@ -1506,15 +1604,26 @@ export default function AdminSettingsPage() {
   const updateMobileCanvasEl = (id: string, patch: Partial<PageElement>) =>
     setMobileConfigs(c => ({ ...c, [activeMobileCanvasPage]: { ...c[activeMobileCanvasPage], elements: c[activeMobileCanvasPage].elements.map(e => e.id === id ? { ...e, ...patch } : e) } }))
 
+  const uploadEditorImage = async (file: File, path: string) => {
+    const body = new FormData()
+    body.append('file', file)
+    body.append('path', path)
+
+    const res = await fetch('/api/admin/storage/upload', { method: 'POST', body })
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok || !payload.url) {
+      throw new Error(payload.error ?? 'Upload failed')
+    }
+    return payload.url as string
+  }
+
   const handleDesktopImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, elId: string) => {
     const file = e.target.files?.[0]; if (!file) return
     setUploadingImg(true)
     try {
       const path = `page-editor/${activePage}/${elId}-${Date.now()}.${file.name.split('.').pop()}`
-      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      updateEl(elId, { imageUrl: data.publicUrl })
+      const publicUrl = await uploadEditorImage(file, path)
+      updateEl(elId, { imageUrl: publicUrl })
     } catch { alert('Upload failed. Check Supabase storage.') }
     finally { setUploadingImg(false) }
   }
@@ -1531,10 +1640,8 @@ export default function AdminSettingsPage() {
     setUploading(true)
     try {
       const path = `page-editor/${device}/${pageId}/${elId}-${Date.now()}.${file.name.split('.').pop()}`
-      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      update(elId, { imageUrl: data.publicUrl })
+      const publicUrl = await uploadEditorImage(file, path)
+      update(elId, { imageUrl: publicUrl })
     } catch { alert('Upload failed. Check Supabase storage.') }
     finally { setUploading(false) }
   }
@@ -1544,10 +1651,8 @@ export default function AdminSettingsPage() {
     setUploadingCatImg(catId)
     try {
       const path = `page-editor/categories/${catId}-${Date.now()}.${file.name.split('.').pop()}`
-      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      setCategoryItems(items => items.map(c => c.id === catId ? { ...c, imageUrl: data.publicUrl } : c))
+      const publicUrl = await uploadEditorImage(file, path)
+      setCategoryItems(items => items.map(c => c.id === catId ? { ...c, imageUrl: publicUrl } : c))
     } catch { alert('Upload failed.') }
     finally { setUploadingCatImg(null) }
   }
@@ -1576,10 +1681,8 @@ export default function AdminSettingsPage() {
     setUploadingMobileImg(true)
     try {
       const path = `page-editor/mobile/${activeMobilePage}/${elId}-${Date.now()}.${file.name.split('.').pop()}`
-      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-      if (error) throw error
-      const { data } = supabase.storage.from('product-images').getPublicUrl(path)
-      updateMobileEl(elId, { imageUrl: data.publicUrl })
+      const publicUrl = await uploadEditorImage(file, path)
+      updateMobileEl(elId, { imageUrl: publicUrl })
     } catch { alert('Upload failed.') }
     finally { setUploadingMobileImg(false) }
   }
@@ -1588,9 +1691,10 @@ export default function AdminSettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const { data: row } = await supabase.from('site_settings').select('id').single()
-      if (!row?.id) throw new Error('No settings row')
-      await supabase.from('site_settings').update({
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
         brand_name: brandName, whatsapp_number: whatsapp,
         announcement_text: announcement, instagram_url: instagram,
         contact_location: contactLocation,
@@ -1609,32 +1713,16 @@ export default function AdminSettingsPage() {
           _checkoutSettings: { paymentMethods },
           _featuredDropRedirect: featuredDropRedirect,
         }),
-        updated_at: new Date().toISOString(),
-      }).eq('id', row.id)
-
-      // Sync categories to DB
-      if (categoryItems.length > 0) {
-        const { data: existingCats } = await supabase.from('categories').select('id, slug')
-        const existingSlugs = new Set((existingCats ?? []).map((c: any) => c.slug))
-        for (const item of categoryItems) {
-          const slug = item.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-          if (!slug) continue
-          if (existingSlugs.has(slug)) {
-            await supabase.from('categories').update({ name: item.name.charAt(0).toUpperCase() + item.name.slice(1) }).eq('slug', slug)
-          } else {
-            await supabase.from('categories').insert({ name: item.name.charAt(0).toUpperCase() + item.name.slice(1), slug, description: null })
-          }
-        }
-        const activeSlugs = categoryItems.map(c => c.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).filter(Boolean)
-        const toRemove = (existingCats ?? []).filter((c: any) => !activeSlugs.includes(c.slug))
-        for (const cat of toRemove) {
-          const { count } = await supabase.from('products').select('id', { count: 'exact', head: true }).eq('category_id', cat.id)
-          if (!count || count === 0) await supabase.from('categories').delete().eq('id', cat.id)
-        }
-      }
+        categoryItems,
+        }),
+      })
+      const payload = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(payload.error ?? 'Unable to save settings')
 
       await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
       setSaved(true); setTimeout(() => setSaved(false), 2500)
+    } catch (err: any) {
+      alert(err?.message ?? 'Unable to save settings')
     } finally { setSaving(false) }
   }
 
@@ -1881,7 +1969,7 @@ export default function AdminSettingsPage() {
                       <PropRow label="Image">
                         {selEl.imageUrl ? (
                           <div style={{ position: 'relative', marginBottom: 8 }}>
-                            <img src={selEl.imageUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', objectPosition: 'top center', borderRadius: 8 }} />
+                            <img src={selEl.imageUrl} alt="" style={{ width: '100%', height: 110, objectFit: 'cover', objectPosition: activePage === 'carousel' ? resolveCarouselImageObjectPosition(selEl) : 'top center', transformOrigin: activePage === 'carousel' ? resolveCarouselImageObjectPosition(selEl) : 'top center', borderRadius: 8 }} />
                             <button onClick={() => updateEl(selEl.id, { imageUrl: '' })} style={{ position: 'absolute', top: 5, right: 5, width: 22, height: 22, background: 'rgba(0,0,0,0.65)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>×</button>
                           </div>
                         ) : (
@@ -1911,12 +1999,18 @@ export default function AdminSettingsPage() {
                         </div>
                       </PropRow>
                       <PropRow label="Image Focus">
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
-                          {[{ label: 'Top', val: 'top center' }, { label: 'Center', val: 'center center' }, { label: 'Bottom', val: 'bottom center' }, { label: 'Left', val: 'center left' }, { label: 'Right', val: 'center right' }, { label: 'Top L', val: 'top left' }].map(opt => (
-                            <button key={opt.val} onClick={() => updateEl(selEl.id, { objectPosition: opt.val })} style={{ padding: '5px 4px', fontSize: 10, borderRadius: 5, border: `1px solid ${(selEl.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#e8e8e5'}`, background: (selEl.objectPosition ?? 'top center') === opt.val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selEl.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#666', fontFamily: 'Barlow,sans-serif' }}>{opt.label}</button>
-                          ))}
-                        </div>
-                        <input type="text" value={selEl.objectPosition ?? 'top center'} onChange={e => updateEl(selEl.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+                        {activePage === 'carousel' ? (
+                          <CarouselImageFocusEditor selected={selEl} accentColor="#f04e0f" onPatch={patch => updateEl(selEl.id, patch)} />
+                        ) : (
+                          <>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, marginBottom: 6 }}>
+                              {[{ label: 'Top', val: 'top center' }, { label: 'Center', val: 'center center' }, { label: 'Bottom', val: 'bottom center' }, { label: 'Left', val: 'center left' }, { label: 'Right', val: 'center right' }, { label: 'Top L', val: 'top left' }].map(opt => (
+                                <button key={opt.val} onClick={() => updateEl(selEl.id, { objectPosition: opt.val })} style={{ padding: '5px 4px', fontSize: 10, borderRadius: 5, border: `1px solid ${(selEl.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#e8e8e5'}`, background: (selEl.objectPosition ?? 'top center') === opt.val ? '#fff4f0' : '#fff', cursor: 'pointer', color: (selEl.objectPosition ?? 'top center') === opt.val ? '#f04e0f' : '#666', fontFamily: 'Barlow,sans-serif' }}>{opt.label}</button>
+                              ))}
+                            </div>
+                            <input type="text" value={selEl.objectPosition ?? 'top center'} onChange={e => updateEl(selEl.id, { objectPosition: e.target.value })} placeholder="e.g. 50% 20%" style={{ width: '100%', border: '1px solid #e8e8e5', borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' as const }} />
+                          </>
+                        )}
                       </PropRow>
                       <PropRow label="Placeholder Color">
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   if (originError) return originError
 
   if (!RAZORPAY_ENABLED) {
-    return NextResponse.json({ error: 'Online payment is currently unavailable' }, { status: 503 })
+    return NextResponse.json({ error: 'Online payment is unavailable' }, { status: 503 })
   }
 
   try {

@@ -210,7 +210,7 @@ export default function CheckoutPage() {
       return
     }
     if (method === 'razorpay' && !razorpayKeyId) {
-      setError('Online payment is not configured yet. Please choose Cash on Delivery or WhatsApp.')
+      setError('Online payment is unavailable. Please choose Cash on Delivery or WhatsApp.')
       return
     }
 
