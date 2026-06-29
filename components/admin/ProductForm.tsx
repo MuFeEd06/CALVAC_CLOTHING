@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { X, Upload } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { getCollectionItems } from '@/lib/collections'
 import { formatProductImageLimit, getOptimizedProductImageUrl, MAX_PRODUCT_IMAGE_BYTES } from '@/lib/productImages'
 import { TOP_FOCUSED_IMAGE_CLASS_NAME } from '@/lib/contentImageFocus'
@@ -153,13 +152,13 @@ export default function ProductForm({ product, categories, settings }: ProductFo
         updated_at: new Date().toISOString(),
       }
 
-      if (product) {
-        const { error } = await supabase.from('products').update(payload).eq('id', product.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('products').insert({ ...payload, created_at: new Date().toISOString() })
-        if (error) throw error
-      }
+      const res = await fetch(product ? `/api/admin/products/${product.id}` : '/api/admin/products', {
+        method: product ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error ?? 'Unable to save product')
 
       await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
       router.push(manageStorePath('/products'))

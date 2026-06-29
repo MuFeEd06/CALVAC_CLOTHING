@@ -73,22 +73,22 @@ export async function createOrder(order: Omit<Order, 'id' | 'created_at' | 'upda
 export async function getOrders() {
   if (!hasSupabaseConfig) return [] as Order[]
 
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data as Order[]
+  const res = await fetch('/api/admin/orders', { cache: 'no-store' })
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(payload.error ?? 'Unable to load orders')
+  return (payload.orders ?? []) as Order[]
 }
 
 export async function updateOrderStatus(id: string, status: Order['status']) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
 
-  const { error } = await supabase
-    .from('orders')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', id)
-  if (error) throw error
+  const res = await fetch(`/api/admin/orders/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  })
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(payload.error ?? 'Unable to update order')
 }
 
 // ─── SITE SETTINGS ──────────────────────────────────────────
@@ -106,11 +106,13 @@ export async function getSiteSettings(): Promise<SiteSettings> {
 export async function updateSiteSettings(settings: Partial<SiteSettings>) {
   if (!hasSupabaseConfig) throw new Error('Supabase is not configured')
 
-  const { error } = await supabase
-    .from('site_settings')
-    .update({ ...settings, updated_at: new Date().toISOString() })
-    .eq('id', settings.id)
-  if (error) throw error
+  const res = await fetch('/api/admin/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  })
+  const payload = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(payload.error ?? 'Unable to update settings')
 }
 
 // ─── STORAGE ────────────────────────────────────────────────

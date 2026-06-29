@@ -51,6 +51,7 @@ export default function CollectionsSection({ products, settings }: Props) {
   const viewport = useViewportKind()
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const cfg = mergeDeviceConfig(settings ?? null, 'collections', DEFAULTS, viewport)
+  const collectionBackground = cfg.bgColor || '#ffffff'
   const parallaxSpeed = getParallaxSpeed(settings ?? null)
 
   const parallax1 = (scrollY * 0.16 * parallaxSpeed).toFixed(1)
@@ -73,14 +74,14 @@ export default function CollectionsSection({ products, settings }: Props) {
     // ── TABLET: unchanged original layout ──
     if (isTablet) {
       return (
-        <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px clamp(32px,6vw,72px) 84px' }}>
+        <section ref={ref} style={{ position: 'relative', background: collectionBackground, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '72px clamp(32px,6vw,72px) 84px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px,0.72fr) minmax(0,1.28fr)', gap: 'clamp(32px,5vw,68px)', alignItems: 'start' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 22 }}>
               {vis(cfg,'intro') && <p style={{ fontSize: 16, lineHeight: 1.85, color: clr(cfg,'intro','#777'), fontFamily: 'Barlow,sans-serif', margin: 0, textAlign: 'center' }}>{txt(cfg,'intro','From enduring classics to daring statement pieces, our collections are crafted with intention.')}</p>}
               {vis(cfg,'model_image') && (
                 <div>
-                  <div style={{ ...imageIntro(0.05, 0.38), position: 'relative', aspectRatio: '4 / 5.4', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc'), clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
-                    <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', transform: `translateY(${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div style={{ ...imageIntro(0.05, 0.38), position: 'relative', aspectRatio: '4 / 5.4', overflow: 'hidden', background: collectionBackground, clipPath: 'polygon(18% 0%,100% 0%,100% 20%,76% 20%,100% 46%,100% 82%,70% 100%,18% 100%,0% 82%,28% 65%,0% 46%,0% 20%)' }}>
+                    <div style={{ position: 'absolute', top: '-10%', left: 0, right: 0, height: '122%', background: collectionBackground, transform: `translateY(${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img1 ? <Image src={img1} alt="Collection" fill sizes="30vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} /> : null}
                     </div>
                   </div>
@@ -95,8 +96,8 @@ export default function CollectionsSection({ products, settings }: Props) {
                   <p style={{ fontSize: 16, lineHeight: 1.75, color: clr(cfg,'feat_desc','#888'), fontFamily: 'Barlow,sans-serif', margin: '0 0 22px', maxWidth: 330 }}>{txt(cfg,'feat_desc','Your go-to wardrobe staples, crafted for comfort and effortless style.')}</p>
                   {vis(cfg,'feat_btn') && <Link href="/shop" style={{ display: 'inline-flex', minHeight: 44, alignItems: 'center', gap: 10, border: '1.5px solid #0d0d0d', borderRadius: 999, padding: '11px 24px', fontSize: 11, fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase', textDecoration: 'none', color: '#0d0d0d', fontFamily: 'Barlow,sans-serif' }}>{txt(cfg,'feat_btn','GET STARTED')} →</Link>}
                 </div>
-                <div style={{ ...imageIntro(0.1, 0.42), position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
-                  <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                <div style={{ ...imageIntro(0.1, 0.42), position: 'relative', aspectRatio: '1 / 1.08', overflow: 'hidden', background: collectionBackground, clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+                  <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', background: collectionBackground, transform: `translateY(${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                     {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="132px" style={{ objectFit: 'cover', objectPosition: 'top' }} /> : null}
                   </div>
                 </div>
@@ -117,7 +118,7 @@ export default function CollectionsSection({ products, settings }: Props) {
 
     // Mobile: stable text with image intro and safe parallax.
     return (
-      <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '52px 0 68px' }}>
+      <section ref={ref} style={{ position: 'relative', background: collectionBackground, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '52px 0 68px' }}>
 
         {/* Intro text */}
         {vis(cfg,'intro') && (
@@ -132,16 +133,16 @@ export default function CollectionsSection({ products, settings }: Props) {
         {vis(cfg,'model_image') && (
           <div style={{ ...imageIntro(0.04, 0.38), position: 'relative', marginBottom: 16 }}>
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative', margin: '0 20px' }}>
-              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
-              <div style={{ position: 'relative', zIndex: 2, height: 'min(80vw,340px)', overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
-                <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: collectionBackground, clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
+              <div style={{ position: 'relative', zIndex: 2, height: 'min(80vw,340px)', overflow: 'hidden', background: collectionBackground }}>
+                <div style={{ position: 'absolute', top: '-12%', left: 0, right: 0, height: '124%', background: collectionBackground, transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img1
                     ? <Image src={img1} alt="Collection" fill sizes="(max-width:768px) 92vw" style={{ objectFit: 'cover', objectPosition: 'top center' }} />
-                    : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#c8c4bc,#b0aca4)' }} />}
+                    : <div style={{ width: '100%', height: '100%', background: collectionBackground }} />}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.12))', pointerEvents: 'none' }} />
                 </div>
                 {/* White stripe at 65% like desktop */}
-                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 8, background: cfg.bgColor, zIndex: 3 }} />
+                <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 8, background: collectionBackground, zIndex: 3 }} />
               </div>
             </div>
             {vis(cfg,'caption') && (
@@ -169,10 +170,10 @@ export default function CollectionsSection({ products, settings }: Props) {
               )}
             </div>
             {/* Featured thumbnail — desktop polygon */}
-            <div style={{ ...imageIntro(0.1, 0.44), position: 'relative', width: 88, height: 88, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
-              <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+            <div style={{ ...imageIntro(0.1, 0.44), position: 'relative', width: 88, height: 88, overflow: 'hidden', flexShrink: 0, background: collectionBackground, clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+              <div style={{ position: 'absolute', top: '-8%', left: 0, right: 0, height: '116%', background: collectionBackground, transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                 {featuredImg ? <Image src={featuredImg} alt="Featured" fill sizes="88px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
-                  : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
+                  : <div style={{ width: '100%', height: '100%', background: collectionBackground }} />}
               </div>
             </div>
           </div>
@@ -201,7 +202,7 @@ export default function CollectionsSection({ products, settings }: Props) {
   }
 
   return (
-    <section ref={ref} style={{ position: 'relative', background: cfg.bgColor, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '80px 52px 88px' }}>
+    <section ref={ref} style={{ position: 'relative', background: collectionBackground, borderTop: '1px solid #e8e8e5', overflow: 'hidden', padding: '80px 52px 88px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '42fr 58fr', gap: '0 60px', alignItems: 'start' }}>
 
         {/* ── LEFT COLUMN ── */}
@@ -217,15 +218,15 @@ export default function CollectionsSection({ products, settings }: Props) {
           <div style={{ position: 'relative' }}>
             {/* S-shape wrapper for image 1 */}
             <div style={{ clipPath: 'polygon(20% 0%,100% 0%,100% 20%,75% 20%,100% 45%,100% 80%,70% 100%,20% 100%,0% 80%,30% 65%,0% 45%,0% 20%)', position: 'relative' }}>
-              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: '#e4e1db', clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
+              <div style={{ position: 'absolute', left: '5%', top: '2%', width: '92%', height: '96%', background: collectionBackground, clipPath: 'polygon(0% 100%,0% 0%,25% 0%,50% 40%,75% 0%,100% 0%,100% 100%,80% 100%,80% 30%,50% 70%,20% 30%,20% 100%)', zIndex: 0 }} />
               <div style={{ ...imageIntro(0.05, 0.42), position: 'relative', zIndex: 2 }}>
-                <div style={{ position: 'relative', height: 380, overflow: 'hidden', background: clr(cfg,'model_image','#d8d4cc') }}>
-                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                <div style={{ position: 'relative', height: 380, overflow: 'hidden', background: collectionBackground }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '130%', background: collectionBackground, transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                     {img1 ? <Image src={img1} alt="Collection" fill style={{ objectFit: 'cover', objectPosition: 'top center' }} />
-                      : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(160deg,#c8c4bc,#b0aca4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(0,0,0,0.25)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>MODEL IMAGE</span></div>}
+                      : <div style={{ width: '100%', height: '100%', background: collectionBackground, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(0,0,0,0.25)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>MODEL IMAGE</span></div>}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.12))', pointerEvents: 'none' }} />
                   </div>
-                  <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 10, background: cfg.bgColor, zIndex: 3 }} />
+                  <div style={{ position: 'absolute', top: '65%', left: 0, right: 0, height: 10, background: collectionBackground, zIndex: 3 }} />
                 </div>
               </div>
             </div>
@@ -259,9 +260,9 @@ export default function CollectionsSection({ products, settings }: Props) {
                   </Link>
                 )}
               </div>
-              <div style={{ ...imageIntro(0.1, 0.38), width: 120, height: 120, overflow: 'hidden', flexShrink: 0, background: clr(cfg,'featured_img','#b8c8b8'), position: 'relative', clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
+              <div style={{ ...imageIntro(0.1, 0.38), width: 120, height: 120, overflow: 'hidden', flexShrink: 0, background: collectionBackground, position: 'relative', clipPath: 'polygon(5% 5%,80% 5%,95% 35%,95% 95%,20% 95%,5% 65%)' }}>
                 {featuredImg ? <Image src={featuredImg} alt="Featured" fill style={{ objectFit: 'cover', objectPosition: 'top' }} />
-                  : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c8b8,#90a090)' }} />}
+                  : <div style={{ width: '100%', height: '100%', background: collectionBackground }} />}
               </div>
             </div>
           </div>

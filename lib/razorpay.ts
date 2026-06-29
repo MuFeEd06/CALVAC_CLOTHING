@@ -20,7 +20,7 @@ export async function createRazorpayOrder(
   amount: number,
   orderNumber: string,
 ): Promise<RazorpayOrderResult> {
-  if (!RAZORPAY_ENABLED) throw new Error('Online payment is currently unavailable')
+  if (!RAZORPAY_ENABLED) throw new Error('Online payment is unavailable')
 
   const amountInPaise = Math.round(amount * 100)
   if (!Number.isFinite(amountInPaise) || amountInPaise <= 0) {

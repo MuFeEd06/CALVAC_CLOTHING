@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 
 export default function DeleteProductButton({ productId, productName }: { productId: string; productName: string }) {
   const [confirming, setConfirming] = useState(false)
@@ -12,8 +11,13 @@ export default function DeleteProductButton({ productId, productName }: { produc
 
   const handleDelete = async () => {
     setLoading(true)
-    const { error } = await supabase.from('products').delete().eq('id', productId)
-    if (error) { alert('Failed to delete'); setLoading(false); return }
+    const res = await fetch(`/api/admin/products/${productId}`, { method: 'DELETE' })
+    const payload = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      alert(payload.error ?? 'Failed to delete')
+      setLoading(false)
+      return
+    }
     await fetch('/api/revalidate', { method: 'POST' }).catch(() => null)
     router.refresh()
   }

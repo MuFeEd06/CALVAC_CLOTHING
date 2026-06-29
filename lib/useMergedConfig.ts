@@ -12,6 +12,10 @@ export interface PageEl {
   width?: number
   height?: number
   isImage?: boolean
+  zoom?: number
+  objectPosition?: string
+  imageFocus?: string
+  imageObjectPosition?: string
 }
 
 export interface MergedConfig {

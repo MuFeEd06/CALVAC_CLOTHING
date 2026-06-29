@@ -12,6 +12,10 @@ import { clampedParallax } from '@/lib/useScrollAnimation'
 import { useViewportKind } from '@/lib/useBreakpoint'
 import { getParallaxSpeed } from '@/lib/siteSettings'
 import { getFeaturedDropHref } from '@/lib/featuredDropRedirect'
+import {
+  HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION,
+  normalizeHomepageObjectPosition,
+} from '@/lib/contentImageFocus'
 
 interface HeroElement {
   id: string; visible: boolean; x: number; y: number
@@ -82,7 +86,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
   const imgW      = imgEl?.width  ?? 34
   const imgH      = imgEl?.height ?? 100
   const imgZoom   = imgEl?.zoom   ?? 1
-  const imgObjPos = imgEl?.objectPosition ?? 'top center'
+  const imgObjPos = normalizeHomepageObjectPosition(imgEl?.objectPosition ?? HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION)
   const heroImageBackground = heroImageUrl ? 'transparent' : merged.bgColor
 
   const pos = (id: string): React.CSSProperties => {
@@ -95,7 +99,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
     const isTablet = viewport === 'tablet'
     const headline = `${el('headline_left')?.content ?? 'where\n- style'}\n${el('headline_right')?.content ?? 'lives\n- now'}`
     const padX = isTablet ? 'clamp(32px,7vw,72px)' : '20px'
-    const tabletParallax = clampedParallax(scrollY, 0.07 * parallaxSpeed, 36 * parallaxSpeed)
+    const tabletParallax = clampedParallax(scrollY, 0.045 * parallaxSpeed, 14 * parallaxSpeed)
 
     // ── TABLET: unchanged original layout ──
     if (isTablet) {
@@ -129,10 +133,10 @@ export default function HeroSection({ settings, categories = [] }: Props) {
                 </div>
               )}
             </div>
-            <div style={{ position: 'relative', zIndex: 20, minHeight: 560, overflow: 'hidden', background: heroImageBackground, pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', inset: '0 4% 0 0', background: heroImageBackground, overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', background: heroImageBackground, transform: `translateY(-${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                  {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
+            <div style={{ position: 'relative', zIndex: 20, minHeight: 560, overflow: 'hidden', backgroundColor: heroImageBackground, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', inset: '0 4% 0 0', backgroundColor: heroImageBackground, overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', backgroundColor: heroImageBackground, transform: `translateY(-${tabletParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  {heroImageUrl ? <Image src={heroImageUrl} alt="Hero model" fill priority sizes="50vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} /> : null}
                 </div>
               </div>
               {vis('orange_star') && <div className="animate-spin-slow" style={{ ...exitStyle, position: 'absolute', left: '2%', top: '62%', color: el('orange_star')?.color ?? merged.accentColor, fontSize: 34, lineHeight: 1 }}>{el('orange_star')?.content ?? '*'}</div>}
@@ -146,7 +150,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
 
     // Mobile: scroll outro on content, parallax-only image.
     // Hero is at top so scrollY drives all effects directly (no sectionProgress needed)
-    const mobileParallax = clampedParallax(scrollY, 0.06 * parallaxSpeed, 34 * parallaxSpeed)
+    const mobileParallax = clampedParallax(scrollY, 0.05 * parallaxSpeed, 24 * parallaxSpeed)
     // fadeIn for text zones based on how far scrollY is (they start visible, exit on scroll)
     const mobileExitStyle = scrollExitStyle(scrollY, txCfg)
     const legacyMobileHero = (
@@ -174,11 +178,11 @@ export default function HeroSection({ settings, categories = [] }: Props) {
         </div>
 
         {/* Zone 2 — full-width hero image — parallax (image does NOT get exitStyle) */}
-        <div style={{ position: 'relative', zIndex: 20, width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', background: heroImageBackground, marginTop: '-34px', pointerEvents: 'none' }}>
+        <div style={{ position: 'relative', zIndex: 20, width: '100%', aspectRatio: '3 / 4', maxHeight: '62svh', overflow: 'hidden', backgroundColor: heroImageBackground, marginTop: '-34px', pointerEvents: 'none' }}>
           {/* Parallax inner wrapper */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', background: heroImageBackground, transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', backgroundColor: heroImageBackground, transform: `translateY(${mobileParallax}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
             {heroImageUrl ? (
-              <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: 'top center', transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
+              <Image src={heroImageUrl} alt="Hero model" fill priority sizes="100vw" style={{ objectFit: 'cover', objectPosition: imgObjPos, transform: imgZoom !== 1 ? `scale(${imgZoom})` : undefined, transformOrigin: 'center top' }} />
             ) : null}
           </div>
           {/* Stat — overlaid bottom-right like desktop */}
@@ -240,7 +244,7 @@ export default function HeroSection({ settings, categories = [] }: Props) {
     )
     void legacyMobileHero
 
-    const mobileCanvasParallax = clampedParallax(scrollY, 0.035 * parallaxSpeed, 18 * parallaxSpeed)
+    const mobileCanvasParallax = clampedParallax(scrollY, 0.03 * parallaxSpeed, 12 * parallaxSpeed)
     const mobileFont = (id: string, fallback: number, minRatio = 0.72) => {
       const value = el(id)?.fontSize ?? fallback
       return `clamp(${Math.max(7, Math.round(value * minRatio))}px, ${(value / 390) * 100}vw, ${value}px)`
@@ -300,8 +304,8 @@ export default function HeroSection({ settings, categories = [] }: Props) {
         )}
 
         {vis('model_image') && (
-          <div style={{ position: 'absolute', left: `${imgX}%`, top: `${imgY}%`, width: `${imgW}%`, height: `${imgH}%`, zIndex: 20, overflow: 'hidden', background: heroImageBackground, pointerEvents: 'none', willChange: 'transform' }}>
-            <div style={{ position: 'absolute', left: 0, right: 0, top: '-7%', height: '118%', background: heroImageBackground, transform: `translateY(${mobileCanvasParallax}px)`, transition: 'transform 0.1s linear' }}>
+          <div style={{ position: 'absolute', left: `${imgX}%`, top: `${imgY}%`, width: `${imgW}%`, height: `${imgH}%`, zIndex: 20, overflow: 'hidden', backgroundColor: heroImageBackground, pointerEvents: 'none', willChange: 'transform' }}>
+            <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '112%', backgroundColor: heroImageBackground, transform: `translateY(${mobileCanvasParallax}px)`, transition: 'transform 0.1s linear' }}>
               {heroImageUrl ? (
                 <Image
                   src={heroImageUrl}

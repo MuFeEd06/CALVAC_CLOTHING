@@ -2,8 +2,10 @@
 // Both the admin canvas and live page components import from here.
 // x/y are % of viewport/canvas width/height (0–100).
 
+import { CAROUSEL_DEFAULT_IMAGE_FOCUS, CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION } from './carouselImageFocus'
+
 export const HERO_DEFAULTS = [
-  { id: 'model_image',   label: 'Hero Model Image',    visible: true, x: 33, y: 0,   width: 34, height: 100, isImage: true,  color: '#e2e2de', imageUrl: '', fontSize: 14, zoom: 1, objectPosition: 'top center' },
+  { id: 'model_image',   label: 'Hero Model Image',    visible: true, x: 33, y: 0,   width: 34, height: 100, isImage: true,  color: '#e2e2de', imageUrl: '', fontSize: 14, zoom: 1, objectPosition: '50% 0%' },
   { id: 'tag_left',      label: '//FASHION Tag',       visible: true, x: 3,  y: 10,  fontSize: 9,  color: '#aaaaaa', content: '//FASHION · SS 2026' },
   { id: 'headline_left', label: 'Left Headline',       visible: true, x: 2,  y: 17,  fontSize: 108, color: '#0d0d0d', content: 'where\n- style' },
   { id: 'est_rule',      label: 'EST. 2026 Rule',      visible: true, x: 2,  y: 46,  fontSize: 8,  color: '#aaaaaa', content: '—— EST. 2026' },
@@ -20,7 +22,7 @@ export const HERO_DEFAULTS = [
 ]
 
 export const HERO_MOBILE_DEFAULTS = [
-  { id: 'model_image',   label: 'Hero Model Image',    visible: true, x: 20, y: 28, width: 72, height: 66, isImage: true,  color: '#e2e2de', imageUrl: '', fontSize: 14, zoom: 1, objectPosition: 'top center' },
+  { id: 'model_image',   label: 'Hero Model Image',    visible: true, x: 20, y: 28, width: 72, height: 66, isImage: true,  color: '#e2e2de', imageUrl: '', fontSize: 14, zoom: 1, objectPosition: '50% 0%' },
   { id: 'tag_left',      label: '//FASHION Tag',       visible: true, x: 5,  y: 7,  fontSize: 12, color: '#f04e0f', content: '//FASHION - SS 2026' },
   { id: 'headline_left', label: 'Left Headline',       visible: true, x: 5,  y: 14, fontSize: 76, color: '#0d0d0d', content: 'where\n- style' },
   { id: 'est_rule',      label: 'EST. 2026 Rule',      visible: true, x: 5,  y: 93, fontSize: 8,  color: '#aaaaaa', content: '-- EST. 2026' },
@@ -68,12 +70,12 @@ export const CAROUSEL_DEFAULTS = [
   { id: 'year',   label: 'Year Tag',         visible: true, x: 3,  y: 14, fontSize: 12, color: '#aaaaaa', content: '2026' },
   { id: 'other',  label: '[Other] Tag',      visible: true, x: 12, y: 14, fontSize: 11, color: '#aaaaaa', content: '[Other]' },
   { id: 'wear',   label: '[Wear the Moment]',visible: true, x: 36, y: 85, fontSize: 11, color: '#ffffff', content: '[Wear the Moment]' },
-  { id: 'card1',  label: 'Card 1 Image',     visible: true, x: 2,  y: 25, width: 14, height: 62, isImage: true, color: '#c8b890', imageUrl: '', fontSize: 14 },
-  { id: 'card2',  label: 'Card 2 Image',     visible: true, x: 17, y: 22, width: 16, height: 68, isImage: true, color: '#a8b898', imageUrl: '', fontSize: 14 },
-  { id: 'card3',  label: 'Card 3 (Active)',  visible: true, x: 34, y: 16, width: 20, height: 78, isImage: true, color: '#3e3e3e', imageUrl: '', fontSize: 14 },
-  { id: 'card4',  label: 'Card 4 Image',     visible: true, x: 55, y: 22, width: 16, height: 68, isImage: true, color: '#90aea8', imageUrl: '', fontSize: 14 },
-  { id: 'card5',  label: 'Card 5 Image',     visible: true, x: 72, y: 25, width: 14, height: 62, isImage: true, color: '#b8a888', imageUrl: '', fontSize: 14 },
-  { id: 'card6',  label: 'Card 6 Image',     visible: true, x: 87, y: 28, width: 12, height: 55, isImage: true, color: '#9a9088', imageUrl: '', fontSize: 14 },
+  { id: 'card1',  label: 'Card 1 Image',     visible: true, x: 2,  y: 25, width: 14, height: 62, isImage: true, color: '#c8b890', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card2',  label: 'Card 2 Image',     visible: true, x: 17, y: 22, width: 16, height: 68, isImage: true, color: '#a8b898', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card3',  label: 'Card 3 (Active)',  visible: true, x: 34, y: 16, width: 20, height: 78, isImage: true, color: '#3e3e3e', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card4',  label: 'Card 4 Image',     visible: true, x: 55, y: 22, width: 16, height: 68, isImage: true, color: '#90aea8', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card5',  label: 'Card 5 Image',     visible: true, x: 72, y: 25, width: 14, height: 62, isImage: true, color: '#b8a888', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card6',  label: 'Card 6 Image',     visible: true, x: 87, y: 28, width: 12, height: 55, isImage: true, color: '#9a9088', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
 ]
 
 export const COLLECTIONS_DEFAULTS = [

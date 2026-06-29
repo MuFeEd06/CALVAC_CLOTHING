@@ -8,6 +8,12 @@ import { mergeDeviceConfig, txt, imgUrl, clr } from '@/lib/useMergedConfig'
 import { getScrollTransitionConfig, scrollExitStyle } from '@/lib/useScrollTransition'
 import { useViewportKind } from '@/lib/useBreakpoint'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import {
+  CAROUSEL_DEFAULT_IMAGE_FOCUS,
+  CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION,
+  getCarouselImageTransformOrigin,
+  resolveCarouselImageObjectPosition,
+} from '@/lib/carouselImageFocus'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -16,12 +22,12 @@ const DEFAULTS = [
   { id: 'year',    visible: true, x: 3,  y: 14, fontSize: 12, color: '#aaaaaa', content: '2026' },
   { id: 'other',   visible: true, x: 12, y: 14, fontSize: 11, color: '#aaaaaa', content: '[Other]' },
   { id: 'wear',    visible: true, x: 36, y: 85, fontSize: 11, color: '#ffffff', content: '[Wear the Moment]' },
-  { id: 'card1',   visible: true, x: 2,  y: 25, width: 14, height: 62, isImage: true, color: '#c8b890', imageUrl: '', fontSize: 14 },
-  { id: 'card2',   visible: true, x: 17, y: 22, width: 16, height: 68, isImage: true, color: '#a8b898', imageUrl: '', fontSize: 14 },
-  { id: 'card3',   visible: true, x: 34, y: 16, width: 20, height: 78, isImage: true, color: '#3e3e3e', imageUrl: '', fontSize: 14 },
-  { id: 'card4',   visible: true, x: 55, y: 22, width: 16, height: 68, isImage: true, color: '#90aea8', imageUrl: '', fontSize: 14 },
-  { id: 'card5',   visible: true, x: 72, y: 25, width: 14, height: 62, isImage: true, color: '#b8a888', imageUrl: '', fontSize: 14 },
-  { id: 'card6',   visible: true, x: 87, y: 28, width: 12, height: 55, isImage: true, color: '#9a9088', imageUrl: '', fontSize: 14 },
+  { id: 'card1',   visible: true, x: 2,  y: 25, width: 14, height: 62, isImage: true, color: '#c8b890', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card2',   visible: true, x: 17, y: 22, width: 16, height: 68, isImage: true, color: '#a8b898', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card3',   visible: true, x: 34, y: 16, width: 20, height: 78, isImage: true, color: '#3e3e3e', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card4',   visible: true, x: 55, y: 22, width: 16, height: 68, isImage: true, color: '#90aea8', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card5',   visible: true, x: 72, y: 25, width: 14, height: 62, isImage: true, color: '#b8a888', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
+  { id: 'card6',   visible: true, x: 87, y: 28, width: 12, height: 55, isImage: true, color: '#9a9088', imageUrl: '', fontSize: 14, imageFocus: CAROUSEL_DEFAULT_IMAGE_FOCUS, imageObjectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION, objectPosition: CAROUSEL_DEFAULT_IMAGE_OBJECT_POSITION },
 ]
 
 function useSectionProgress() {
@@ -91,13 +97,23 @@ export default function CollectionCarousel({ products, settings }: Props) {
   const gap = isDesktop ? GAP : isTablet ? 16 : 12
   const lift = isDesktop ? LIFT : isTablet ? 30 : 22
 
+  const cardIds = ['card1','card2','card3','card4','card5','card6']
   // Card colors from admin or fallbacks
   const cardColors = [
     clr(cfg,'card1','#c8b890'), clr(cfg,'card2','#a8b898'), clr(cfg,'card3','#3e3e3e'),
     clr(cfg,'card4','#90aea8'), clr(cfg,'card5','#b8a888'), clr(cfg,'card6','#9a9088'),
   ]
   // Card images from admin
-  const cardImgs = ['card1','card2','card3','card4','card5','card6'].map(id => imgUrl(cfg, id))
+  const cardImgs = cardIds.map(id => imgUrl(cfg, id))
+  const cardImageStyles: React.CSSProperties[] = cardIds.map(id => {
+    const focusSource = cfg.elements.get(id)
+    return {
+      objectFit: 'cover',
+      objectPosition: resolveCarouselImageObjectPosition(focusSource),
+      transformOrigin: getCarouselImageTransformOrigin(focusSource),
+      pointerEvents: 'none',
+    }
+  })
 
   const getCardX = (idx: number, active: number) => {
     let x = 0
@@ -211,7 +227,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                   style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -mLift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.45, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}
                 >
                   {imgSrc
-                    ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 520 : 360 })} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
+                    ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 520 : 360 })} alt={item.name} fill draggable={false} style={cardImageStyles[i % cardImageStyles.length]} />
                     : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 8 }}>{item?.name}</span></div>}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                   {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}
@@ -288,7 +304,7 @@ export default function CollectionCarousel({ products, settings }: Props) {
                   goTo(i)
                 }
               }} style={{ flexShrink: 0, width: w, height: h, position: 'relative', overflow: 'hidden', background: bg, clipPath: CLIP, cursor: 'pointer', transform: `translateY(${isActive ? -lift : 0}px)`, opacity: dist === 0 ? 1 : dist === 1 ? 0.92 : dist === 2 ? 0.75 : 0.5, transition: 'width 0.5s cubic-bezier(0.4,0,0.2,1),height 0.5s cubic-bezier(0.4,0,0.2,1),transform 0.5s cubic-bezier(0.4,0,0.2,1),opacity 0.4s', willChange: 'transform,width,height', userSelect: 'none' }}>
-                {imgSrc ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 700 : 480 })} alt={item.name} fill draggable={false} style={{ objectFit: 'cover', objectPosition: 'top', pointerEvents: 'none' }} />
+                {imgSrc ? <Image src={getOptimizedProductImageUrl(imgSrc, { width: isActive ? 700 : 480 })} alt={item.name} fill draggable={false} style={cardImageStyles[i % cardImageStyles.length]} />
                   : <div style={{ width: '100%', height: '100%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif', textAlign: 'center', padding: 10 }}>{item?.name}</span></div>}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,0.28))', pointerEvents: 'none' }} />
                 {isActive && <div style={{ position: 'absolute', top: 0, left: 0, right: '12%', height: 2, background: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }} />}

@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { User } from '@supabase/supabase-js'
@@ -35,20 +37,25 @@ export async function getUser() {
   return user
 }
 
+function normalizeAdminEmail(value: string | null | undefined) {
+  return (value ?? '').trim().toLowerCase()
+}
+
+function getAdminEmailAllowlist() {
+  return (process.env.ADMIN_EMAILS ?? '')
+    .split(/[\s,;]+/)
+    .map(normalizeAdminEmail)
+    .filter(Boolean)
+}
+
 export function isAdminUser(user: Pick<User, 'email' | 'app_metadata'> | null | undefined) {
   if (!user) return false
 
   const metadata = user.app_metadata as Record<string, unknown> | undefined
-  const hasAdminRole = metadata?.role === 'admin' || metadata?.is_admin === true
+  if (metadata?.role === 'admin' || metadata?.is_admin === true) return true
 
-  if (hasAdminRole) return true
-
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-    .split(/[\s,;]+/)
-    .map(email => email.trim().toLowerCase())
-    .filter(Boolean)
-
-  return !!user.email && adminEmails.includes(user.email.toLowerCase())
+  const email = normalizeAdminEmail(user.email)
+  return !!email && getAdminEmailAllowlist().includes(email)
 }
 
 // ─── Get user profile ─────────────────────────────────────────

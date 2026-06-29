@@ -11,6 +11,7 @@ import { clampedParallax, usePrefersReducedMotion } from '@/lib/useScrollAnimati
 import { useViewportKind } from '@/lib/useBreakpoint'
 import { getParallaxSpeed } from '@/lib/siteSettings'
 import { getOptimizedProductImageUrl } from '@/lib/productImages'
+import { HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION } from '@/lib/contentImageFocus'
 
 interface Props { products: Product[]; settings?: SiteSettings | null }
 
@@ -92,16 +93,20 @@ export default function FeaturedMoments({ products, settings }: Props) {
   const img2Src = getOptimizedProductImageUrl(imgUrl(cfg, 'thumb_image') || p2?.images?.[0] || p1?.images?.[1] || '', { width: 520 })
   const img3Src = getOptimizedProductImageUrl(imgUrl(cfg, 'product2_img') || p3?.images?.[0] || '', { width: 780 })
 
-  const parallax1 = (scrollY * 0.18 * parallaxSpeed).toFixed(1)
-  const parallax3 = (scrollY * 0.22 * parallaxSpeed).toFixed(1)
-  // FIX: thumb uses negative top offset so parallax doesn't leave gap at top
-  const parallax2 = (scrollY * 0.12 * parallaxSpeed).toFixed(1)
-  const mobileParallax1 = clampedParallax(scrollY, 0.06 * parallaxSpeed, 34 * parallaxSpeed)
-  const mobileParallax2 = clampedParallax(scrollY, 0.035 * parallaxSpeed, 16 * parallaxSpeed)
-  const mobileParallax3 = clampedParallax(scrollY, 0.045 * parallaxSpeed, 26 * parallaxSpeed)
-  const tabletParallax1 = clampedParallax(scrollY, 0.07 * parallaxSpeed, 36 * parallaxSpeed)
-  const tabletParallax2 = clampedParallax(scrollY, 0.04 * parallaxSpeed, 18 * parallaxSpeed)
-  const tabletParallax3 = clampedParallax(scrollY, 0.05 * parallaxSpeed, 28 * parallaxSpeed)
+  const homepageImageStyle: React.CSSProperties = {
+    objectFit: 'cover',
+    objectPosition: HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION,
+    transformOrigin: 'center top',
+  }
+  const parallax1 = clampedParallax(scrollY, 0.1 * parallaxSpeed, 38 * parallaxSpeed)
+  const parallax3 = clampedParallax(scrollY, 0.09 * parallaxSpeed, 24 * parallaxSpeed)
+  const parallax2 = clampedParallax(scrollY, 0.06 * parallaxSpeed, 10 * parallaxSpeed)
+  const mobileParallax1 = clampedParallax(scrollY, 0.05 * parallaxSpeed, 24 * parallaxSpeed)
+  const mobileParallax2 = clampedParallax(scrollY, 0.025 * parallaxSpeed, 8 * parallaxSpeed)
+  const mobileParallax3 = clampedParallax(scrollY, 0.035 * parallaxSpeed, 16 * parallaxSpeed)
+  const tabletParallax1 = clampedParallax(scrollY, 0.045 * parallaxSpeed, 14 * parallaxSpeed)
+  const tabletParallax2 = clampedParallax(scrollY, 0.025 * parallaxSpeed, 7 * parallaxSpeed)
+  const tabletParallax3 = clampedParallax(scrollY, 0.035 * parallaxSpeed, 10 * parallaxSpeed)
 
   if (viewport !== 'desktop') {
     const isTablet = viewport === 'tablet'
@@ -136,7 +141,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
                 <div>
                   <div onClick={() => p1?.slug && router.push(`/product/${p1.slug}`)} style={{ position: 'relative', aspectRatio: '4 / 5', overflow: 'hidden', clipPath: imageShape, background: cfg.bgColor, cursor: p1?.slug ? 'pointer' : 'default' }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '122%', background: cfg.bgColor, transform: `translateY(-${tabletParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                      {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="34vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                      {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="34vw" style={homepageImageStyle} /> : null}
                     </div>
                   </div>
                   <div style={exitStyle}>
@@ -150,14 +155,14 @@ export default function FeaturedMoments({ products, settings }: Props) {
                 {vis(cfg, 'thumb_image') && (
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, clipPath: imageShape }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(-${tabletParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                      {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                      {img2Src ? <Image src={img2Src} alt={p2?.name ?? 'Product'} fill sizes="18vw" style={homepageImageStyle} /> : null}
                     </div>
                   </div>
                 )}
                 {vis(cfg, 'product2_img') && (
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, clipPath: imageShape }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(-${tabletParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                      {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes="18vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                      {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product'} fill sizes="18vw" style={homepageImageStyle} /> : null}
                     </div>
                   </div>
                 )}
@@ -223,7 +228,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               style={{ position: 'relative', width: '100%', aspectRatio: '4 / 4.8', overflow: 'hidden', clipPath: imageShape, background: cfg.bgColor, cursor: p1?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '124%', background: cfg.bgColor, transform: `translateY(${mobileParallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                {img1Src ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill sizes="(max-width:768px) 100vw" style={homepageImageStyle} /> : null}
               </div>
               {/* White stripe at ~69% like desktop */}
               <div style={{ position: 'absolute', top: '69%', left: 0, right: 0, height: 6, background: cfg.bgColor, zIndex: 3 }} />
@@ -259,7 +264,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
             {vis(cfg, 'thumb_image') && (
               <div style={{ position: 'relative', width: 72, aspectRatio: '4 / 5', overflow: 'hidden', background: cfg.bgColor, flexShrink: 0, clipPath: imageShape }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '116%', background: cfg.bgColor, transform: `translateY(${mobileParallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                  {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                  {img2Src ? <Image src={img2Src} alt={p2?.name ?? ''} fill sizes="72px" style={homepageImageStyle} /> : null}
                 </div>
               </div>
             )}
@@ -275,7 +280,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               style={{ position: 'relative', width: '76%', aspectRatio: '4 / 3.8', overflow: 'hidden', clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', background: cfg.bgColor, cursor: p3?.slug ? 'pointer' : 'default', marginBottom: 14 }}
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '126%', background: cfg.bgColor, transform: `translateY(${mobileParallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
-                {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={{ objectFit: 'cover', objectPosition: 'center top' }} /> : null}
+                {img3Src ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill sizes="(max-width:768px) 76vw" style={homepageImageStyle} /> : null}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
               </div>
             </div>
@@ -367,7 +372,7 @@ export default function FeaturedMoments({ products, settings }: Props) {
               >
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '190%', background: cfg.bgColor, transform: `translateY(${parallax1}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                   {img1Src
-                    ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
+                    ? <Image src={img1Src} alt={p1?.name ?? 'Product'} fill style={homepageImageStyle} />
                     : <div style={{ width: '100%', height: '100%', background: clr(cfg,'main_image','#c8b890'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>PRODUCT IMAGE</span></div>}
                 </div>
                 {p1?.slug && (
@@ -412,10 +417,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
                     onClick={() => p2?.slug && router.push(`/product/${p2.slug}`)}
                     style={{ width: 72, height: 88, overflow: 'hidden', position: 'relative', background: cfg.bgColor, cursor: p2?.slug ? 'pointer' : 'default' }}
                   >
-                    {/* FIX: start at top:-20% so parallax downward motion fills top gap */}
-                    <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '140%', background: cfg.bgColor, transform: `translateY(${parallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '120%', background: cfg.bgColor, transform: `translateY(${parallax2}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                       {img2Src
-                        ? <Image src={img2Src} alt={p2?.name ?? ''} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
+                        ? <Image src={img2Src} alt={p2?.name ?? ''} fill style={homepageImageStyle} />
                         : <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#b8c0a8,#909880)' }} />}
                     </div>
                   </div>
@@ -436,9 +440,9 @@ export default function FeaturedMoments({ products, settings }: Props) {
                   onClick={() => p3?.slug && router.push(`/product/${p3.slug}`)}
                   style={{ width: '76%', height: 194, clipPath: 'polygon(2% 2%,82% 2%,96% 44%,96% 96%,15% 96%,2% 52%)', overflow: 'hidden', position: 'relative', background: cfg.bgColor, cursor: p3?.slug ? 'pointer' : 'default' }}
                 >
-                  <div style={{ position: 'absolute', top: '-20%', left: 0, right: 0, height: '150%', background: cfg.bgColor, transform: `translateY(${parallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '126%', background: cfg.bgColor, transform: `translateY(${parallax3}px)`, transition: 'transform 0.1s linear', willChange: 'transform' }}>
                     {img3Src
-                      ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill style={{ objectFit: 'cover', objectPosition: 'center top' }} />
+                      ? <Image src={img3Src} alt={p3?.name ?? 'Product 2'} fill style={homepageImageStyle} />
                       : <div style={{ width: '100%', height: '100%', background: clr(cfg,'product2_img','#3a3030'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', letterSpacing: '3px', textTransform: 'uppercase', fontFamily: 'Barlow,sans-serif' }}>PRODUCT 2</span></div>}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,transparent 55%,rgba(0,0,0,0.22))', pointerEvents: 'none' }} />
                   </div>

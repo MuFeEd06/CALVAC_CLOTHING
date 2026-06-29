@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import {
+  HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION,
+  normalizeHomepageObjectPosition,
+} from '@/lib/contentImageFocus'
 
 interface Props {
   imageUrl?: string
@@ -12,7 +16,7 @@ interface Props {
   width?: number   // width as % of viewport width
   height?: number  // height as % of section height
   zoom?: number    // scale factor, default 1.0 (100%)
-  objectPosition?: string // e.g. 'top center', 'center', '50% 20%'
+  objectPosition?: string // e.g. '50% 0%', 'center', '50% 20%'
   parallaxSpeed?: number
 }
 
@@ -24,12 +28,12 @@ export default function HeroModelParallax({
   width = 34,
   height = 100,
   zoom = 1,
-  objectPosition = 'top center',
+  objectPosition = HOMEPAGE_TOP_FOCUSED_OBJECT_POSITION,
   parallaxSpeed = 1,
 }: Props) {
   const [scrollY, setScrollY] = useState(0)
   const hasImage = Boolean(imageUrl)
-  const imageBackground = hasImage ? 'transparent' : bgColor
+  const imageLayerBackground = hasImage ? 'transparent' : bgColor
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
@@ -38,7 +42,8 @@ export default function HeroModelParallax({
   }, [])
 
   const speed = Math.min(2, Math.max(0, parallaxSpeed))
-  const parallaxY = (scrollY * 0.15 * speed).toFixed(1)
+  const parallaxY = Math.min(42 * speed, scrollY * 0.15 * speed).toFixed(1)
+  const focalPosition = normalizeHomepageObjectPosition(objectPosition)
 
   return (
     <div style={{
@@ -49,14 +54,14 @@ export default function HeroModelParallax({
       height: `${height}%`,
       zIndex: 20,
       overflow: 'hidden',
-      background: imageBackground,
+      backgroundColor: imageLayerBackground,
       pointerEvents: 'none',
     }}>
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: '115%',
-        background: imageBackground,
+        backgroundColor: imageLayerBackground,
         transform: `translateY(${parallaxY}px)`,
         transition: 'transform 0.1s linear',
         willChange: 'transform',
@@ -69,7 +74,7 @@ export default function HeroModelParallax({
             priority
             style={{
               objectFit: 'cover',
-              objectPosition,
+              objectPosition: focalPosition,
               // zoom is applied as a CSS scale — values > 1 zoom in, < 1 zoom out
               transform: zoom !== 1 ? `scale(${zoom})` : undefined,
               transformOrigin: 'center top',
